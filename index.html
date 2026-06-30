@@ -40,6 +40,7 @@ input[type=text]:focus,textarea:focus{
   border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bg);
 }
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
 .pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem}
 .pill{
@@ -141,16 +142,31 @@ input[type=text]:focus,textarea:focus{
     <!-- 4. Investigation Results -->
     <div class="sec">
       <div class="sec-lbl">Investigation Results</div>
-      <div class="g2">
-        <div class="iw">
-          <label class="lbl">CBC</label>
-          <input type="text" id="lab-cbc"/>
+      
+      <!-- CBC -->
+      <div class="iw">
+        <label class="lbl">CBC</label>
+        <div class="g4">
+          <input type="text" id="lab-hb" placeholder="Hb"/>
+          <input type="text" id="lab-wbc" placeholder="WBC"/>
+          <input type="text" id="lab-eos" placeholder="Eosinophil"/>
+          <input type="text" id="lab-plt" placeholder="Platelet"/>
         </div>
+      </div>
+
+      <!-- FBS & Uric -->
+      <div class="g2">
         <div class="iw">
           <label class="lbl">Fasting Blood Sugar / HbA1c</label>
           <input type="text" id="lab-fbs"/>
         </div>
+        <div class="iw">
+          <label class="lbl">Uric Acid</label>
+          <input type="text" id="lab-uric"/>
+        </div>
       </div>
+
+      <!-- Lipids -->
       <div class="iw">
         <label class="lbl">Lipid Profile</label>
         <div class="g4">
@@ -160,14 +176,34 @@ input[type=text]:focus,textarea:focus{
           <input type="text" id="lab-ldl" placeholder="LDL"/>
         </div>
       </div>
-      <div class="g2">
-        <div class="iw">
-          <label class="lbl">Renal & Liver Function</label>
-          <input type="text" id="lab-rl" placeholder="BUN/Cr, LFT"/>
+
+      <!-- Renal & Liver Function -->
+      <div class="iw">
+        <label class="lbl">Renal Function (Kidney)</label>
+        <div class="g3">
+          <input type="text" id="lab-bun" placeholder="BUN"/>
+          <input type="text" id="lab-cr" placeholder="Cr"/>
+          <input type="text" id="lab-egfr" placeholder="eGFR"/>
         </div>
-        <div class="iw">
-          <label class="lbl">Urine Analysis (UA)</label>
-          <input type="text" id="lab-ua"/>
+      </div>
+      
+      <div class="iw">
+        <label class="lbl">Liver Function</label>
+        <div class="g3">
+          <input type="text" id="lab-ast" placeholder="AST"/>
+          <input type="text" id="lab-alt" placeholder="ALT"/>
+          <input type="text" id="lab-alp" placeholder="ALP"/>
+        </div>
+      </div>
+
+      <!-- Urine Analysis -->
+      <div class="iw">
+        <label class="lbl">Urine Examination</label>
+        <div class="g4">
+          <input type="text" id="lab-upro" placeholder="Protein"/>
+          <input type="text" id="lab-uglu" placeholder="Glucose"/>
+          <input type="text" id="lab-uwbc" placeholder="WBC"/>
+          <input type="text" id="lab-urbc" placeholder="RBC"/>
         </div>
       </div>
       
@@ -182,18 +218,21 @@ input[type=text]:focus,textarea:focus{
     <!-- 5. Assessment -->
     <div class="sec">
       <div class="sec-lbl">Assessment</div>
-      <div class="iw" style="margin-bottom:8px">
-        <label class="lbl" style="color:var(--accent)">* ระบบจะเพิ่ม Assessment โรค DLP, IFG, DM ให้โดยอัตโนมัติหากค่า Lab เกินเกณฑ์</label>
+      
+      <div class="iw">
+        <label class="lbl">Common Problems Presets (กดเพื่อเพิ่มลงใน Assessment)</label>
+        <div class="pill-row" id="row-as-presets"></div>
       </div>
+
       <div class="iw">
         <label class="lbl">1. Overall Status</label>
         <input type="text" id="as-overall" placeholder="e.g., Healthy adult"/>
       </div>
       <div class="iw">
-        <label class="lbl">2. New Findings</label>
+        <label class="lbl">2. New Findings (พิมพ์เพิ่มเติม)</label>
         <div style="display:flex;gap:10px">
           <button class="pill" id="btn-nf" onclick="toggleActive(this)">Select</button>
-          <input type="text" id="as-nf" placeholder="ระบุการค้นพบใหม่..." style="flex:1"/>
+          <input type="text" id="as-nf" placeholder="ระบุการค้นพบใหม่ที่ไม่มีใน preset..." style="flex:1"/>
         </div>
       </div>
       <div class="iw">
@@ -263,11 +302,19 @@ let state = {
   ex: 'none',
   allergy: 'none',
   life: { diet: false, ex: false, weight: false },
-  img: {}
+  img: {},
+  assessPresets: new Set()
 };
 
-const IMG_LIST = ['CXR', 'US abdomen', 'MMG', 'CT Calcium score', 'BMD', 'ABI', 'EKG', 'EST'];
+const IMG_LIST = ['CXR', 'US abdomen', 'MMG', 'CT Calcium score', 'BMD', 'ABI', 'EKG', 'EST', 'Fibroscan'];
 IMG_LIST.forEach(k => state.img[k] = false);
+
+const ASSESS_PRESETS = [
+  'Dyslipidemia (LDL สูง)', 'Hypertriglyceridemia', 'IFG', 'DM', 
+  'Hyperuricemia / Gout', 'Obesity / Overweight / Metabolic Syndrome', 
+  'Fatty Liver (NAFLD / MASLD)', 'Elevated Liver Enzymes', 'Microscopic Hematuria', 
+  'Proteinuria', 'Asymptomatic Bacteriuria', 'Anemia', 'Eosinophilia', 'Leukopenia', 'Abnormal ECG'
+];
 
 // Toggle general active class
 function toggleActive(btn) { btn.classList.toggle('sel'); }
@@ -301,6 +348,23 @@ function renderCheckboxGroup(containerId, options, stateObj, callback) {
     c.appendChild(btn);
   });
 }
+
+const updateAssessPresets = () => {
+  const c = document.getElementById('row-as-presets');
+  c.innerHTML = '';
+  ASSESS_PRESETS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pill' + (state.assessPresets.has(p) ? ' sel' : '');
+    btn.textContent = p;
+    btn.onclick = () => {
+      if(state.assessPresets.has(p)) state.assessPresets.delete(p);
+      else state.assessPresets.add(p);
+      updateAssessPresets();
+    };
+    c.appendChild(btn);
+  });
+};
 
 // PMH
 const updatePMH = (val) => {
@@ -413,7 +477,7 @@ function generateOutput() {
   
   text += '\n';
 
-  // 3. FH (Omit brackets and unchecked items)
+  // 3. FH 
   const fhArr = [];
   if (state.fh.dm) fhArr.push('DM');
   if (state.fh.htn) fhArr.push('HTN');
@@ -453,8 +517,8 @@ function generateOutput() {
   
   text += '\n';
 
-  // --- Auto Assessment Processing ---
-  let autoAsses = [];
+  // --- Assessment Set Initialization ---
+  let asSet = new Set(state.assessPresets);
   let autoPlans = [];
 
   // Check FBS / HbA1c
@@ -468,13 +532,8 @@ function generateOutput() {
               if (n >= 126 || n >= 6.5) isDM = true;
               else if ((n >= 100 && n < 126) || (n >= 5.7 && n < 6.5)) isIFG = true;
           });
-          if (isDM) {
-              autoAsses.push('Diabetes Mellitus (DM)');
-              autoPlans.push('- DM: แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ');
-          } else if (isIFG) {
-              autoAsses.push('Impaired Fasting Glucose (IFG)');
-              autoPlans.push('- IFG: แนะนำลดการบริโภคอาหารหวาน น้ำหวาน แป้งขัดขาว และออกกำลังกายสม่ำเสมอเพื่อควบคุมน้ำหนัก ลดความเสี่ยงเบาหวาน');
-          }
+          if (isDM) asSet.add('DM');
+          else if (isIFG) asSet.add('IFG');
       }
   }
 
@@ -482,21 +541,22 @@ function generateOutput() {
   const ldlStr = getVal('lab-ldl');
   const cholStr = getVal('lab-chol');
   const tgStr = getVal('lab-tg');
-  let isDlp = false;
-  if (ldlStr.match(/\d+/) && parseFloat(ldlStr.match(/\d+/)[0]) >= 130) isDlp = true;
-  if (cholStr.match(/\d+/) && parseFloat(cholStr.match(/\d+/)[0]) >= 200) isDlp = true;
-  if (tgStr.match(/\d+/) && parseFloat(tgStr.match(/\d+/)[0]) >= 150) isDlp = true;
+  if (ldlStr.match(/\d+/) && parseFloat(ldlStr.match(/\d+/)[0]) >= 130) asSet.add('Dyslipidemia (LDL สูง)');
+  if (cholStr.match(/\d+/) && parseFloat(cholStr.match(/\d+/)[0]) >= 200) asSet.add('Dyslipidemia (LDL สูง)');
+  if (tgStr.match(/\d+/) && parseFloat(tgStr.match(/\d+/)[0]) >= 150) asSet.add('Hypertriglyceridemia');
   
-  if (isDlp) {
-      autoAsses.push('Dyslipidemia (DLP)');
-      autoPlans.push('- DLP: แนะนำหลีกเลี่ยงอาหารที่มีไขมันสูง ของทอด ของมัน กะทิ เนื้อสัตว์ติดมัน และออกกำลังกายแบบแอโรบิกสม่ำเสมอเพื่อลดระดับไขมัน');
-  }
-
-
   // 5. Investigations (Show only if filled)
   let invLines = [];
-  const cbc = getVal('lab-cbc'); if (cbc) invLines.push(`CBC: ${cbc}`);
+  
+  let cbcArr = [];
+  if(getVal('lab-hb')) cbcArr.push(`Hb: ${getVal('lab-hb')}`);
+  if(getVal('lab-wbc')) cbcArr.push(`WBC: ${getVal('lab-wbc')}`);
+  if(getVal('lab-eos')) cbcArr.push(`Eosinophil: ${getVal('lab-eos')}`);
+  if(getVal('lab-plt')) cbcArr.push(`Platelet: ${getVal('lab-plt')}`);
+  if (cbcArr.length > 0) invLines.push(`CBC: ${cbcArr.join(', ')}`);
+
   if (fbsStr) invLines.push(`Fasting Blood Sugar / HbA1c: ${fbsStr}`);
+  const uricStr = getVal('lab-uric'); if(uricStr) invLines.push(`Uric Acid: ${uricStr}`);
   
   let lipidArr = [];
   if (cholStr) lipidArr.push(`Chol: ${cholStr}`);
@@ -505,9 +565,25 @@ function generateOutput() {
   if (ldlStr) lipidArr.push(`LDL: ${ldlStr}`);
   if (lipidArr.length > 0) invLines.push(`Lipid Profile: ${lipidArr.join(' / ')}`);
   
-  const rl = getVal('lab-rl'); if (rl) invLines.push(`Renal & Liver Function (BUN/Cr, LFT): ${rl}`);
-  const ua = getVal('lab-ua'); if (ua) invLines.push(`Urine Analysis (UA): ${ua}`);
-  
+  let renalArr = [];
+  if(getVal('lab-bun')) renalArr.push(`BUN: ${getVal('lab-bun')}`);
+  if(getVal('lab-cr')) renalArr.push(`Cr: ${getVal('lab-cr')}`);
+  if(getVal('lab-egfr')) renalArr.push(`eGFR: ${getVal('lab-egfr')}`);
+  if (renalArr.length > 0) invLines.push(`Renal Function: ${renalArr.join(', ')}`);
+
+  let liverArr = [];
+  if(getVal('lab-ast')) liverArr.push(`AST: ${getVal('lab-ast')}`);
+  if(getVal('lab-alt')) liverArr.push(`ALT: ${getVal('lab-alt')}`);
+  if(getVal('lab-alp')) liverArr.push(`ALP: ${getVal('lab-alp')}`);
+  if (liverArr.length > 0) invLines.push(`Liver Function: ${liverArr.join(', ')}`);
+
+  let uaArr = [];
+  if(getVal('lab-upro')) uaArr.push(`Protein: ${getVal('lab-upro')}`);
+  if(getVal('lab-uglu')) uaArr.push(`Glucose: ${getVal('lab-uglu')}`);
+  if(getVal('lab-uwbc')) uaArr.push(`WBC: ${getVal('lab-uwbc')}`);
+  if(getVal('lab-urbc')) uaArr.push(`RBC: ${getVal('lab-urbc')}`);
+  if (uaArr.length > 0) invLines.push(`Urine Examination: ${uaArr.join(', ')}`);
+
   // Imaging processing
   IMG_LIST.forEach(k => {
       if(state.img[k]) {
@@ -521,7 +597,7 @@ function generateOutput() {
     text += invLines.join('\n') + '\n\n';
   }
 
-  // 6. Assessment (Auto-renumber and show only filled)
+  // 6. Assessment
   let asLines = [];
   const overall = getVal('as-overall'); 
   if (overall) asLines.push(`Overall Status: ${overall}`);
@@ -535,8 +611,8 @@ function generateOutput() {
   const risk = getVal('as-risk'); 
   if (risk) asLines.push(`Risk Stratification: ${risk}`);
   
-  // Merge Auto Assessment
-  autoAsses.forEach(a => {
+  // Merge Auto Assessment & Presets
+  asSet.forEach(a => {
       asLines.push(a);
   });
 
@@ -546,6 +622,25 @@ function generateOutput() {
       text += `${i + 1}. ${l}\n`;
     });
     text += '\n';
+  }
+
+  // Auto Plans based on Assessment Set
+  if (asSet.has('DM')) {
+      autoPlans.push('- DM: แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ');
+  } else if (asSet.has('IFG')) {
+      autoPlans.push('- IFG: แนะนำลดการบริโภคอาหารหวาน น้ำหวาน แป้งขัดขาว และออกกำลังกายสม่ำเสมอเพื่อควบคุมน้ำหนัก ลดความเสี่ยงเบาหวาน');
+  }
+
+  if (asSet.has('Dyslipidemia (LDL สูง)') || asSet.has('Hypertriglyceridemia')) {
+      autoPlans.push('- DLP/Hypertriglyceridemia: แนะนำหลีกเลี่ยงอาหารที่มีไขมันสูง ของทอด ของมัน กะทิ เนื้อสัตว์ติดมัน และออกกำลังกายแบบแอโรบิกสม่ำเสมอเพื่อลดระดับไขมัน');
+  }
+
+  if (asSet.has('Hyperuricemia / Gout')) {
+      autoPlans.push('- Uric/Gout: แนะนำงดเครื่องดื่มแอลกอฮอล์ หลีกเลี่ยงการรับประทานสัตว์ปีก เครื่องในสัตว์ และยอดผัก ดื่มน้ำให้เพียงพอ');
+  }
+
+  if (asSet.has('Obesity / Overweight / Metabolic Syndrome') || asSet.has('Fatty Liver (NAFLD / MASLD)')) {
+      autoPlans.push('- Weight/Fatty Liver: แนะนำควบคุมปริมาณแคลอรี่ ลดอาหารจำพวกแป้งและน้ำตาล ออกกำลังกายสม่ำเสมอเพื่อลดน้ำหนัก และหลีกเลี่ยงแอลกอฮอล์');
   }
 
   // 7. Plan (Show only checked items + Auto Plans)
@@ -612,6 +707,7 @@ updateAllergy('none');
 updateLife();
 initImaging();
 updateImgSel();
+updateAssessPresets();
 </script>
 </body>
 </html>
