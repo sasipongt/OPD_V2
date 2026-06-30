@@ -309,9 +309,10 @@ let state = {
 const IMG_LIST = ['CXR', 'US abdomen', 'MMG', 'CT Calcium score', 'BMD', 'ABI', 'EKG', 'EST', 'Fibroscan'];
 IMG_LIST.forEach(k => state.img[k] = false);
 
+// แยก Obesity, Overweight, Metabolic Syndrome ออกจากกัน
 const ASSESS_PRESETS = [
   'Dyslipidemia (LDL สูง)', 'Hypertriglyceridemia', 'IFG', 'DM', 
-  'Hyperuricemia / Gout', 'Obesity / Overweight / Metabolic Syndrome', 
+  'Hyperuricemia / Gout', 'Obesity', 'Overweight', 'Metabolic Syndrome', 
   'Fatty Liver (NAFLD / MASLD)', 'Elevated Liver Enzymes', 'Microscopic Hematuria', 
   'Proteinuria', 'Asymptomatic Bacteriuria', 'Anemia', 'Eosinophilia', 'Leukopenia', 'Abnormal ECG'
 ];
@@ -631,17 +632,49 @@ function generateOutput() {
       } else if (a === 'Hyperuricemia / Gout') {
           pLines.push(`- Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages${drinksAlc ? ', and alcohol (especially beer and spirits)' : ''}. Encourage low-fat dairy products and vegetable consumption.`);
           pLines.push('- Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.');
-      } else if (a === 'Obesity / Overweight / Metabolic Syndrome') {
+      } 
+      // Logic สำหรับ Obesity, Overweight, Metabolic Syndrome
+      else if (a === 'Obesity') {
           pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.');
           pLines.push('- Caloric deficit of 500–750 kcal/day.');
           pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
+          pLines.push('- Consider anti-obesity pharmacotherapy if indicated (e.g., BMI ≥30 or ≥27 with comorbidities).');
+      } else if (a === 'Overweight') {
+          pLines.push('- Weight Loss Targets: Aim for 5–10% of total body weight reduction over 6 months if comorbidities are present.');
+          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
+          pLines.push('- Caloric deficit of 500–750 kcal/day.');
+      } else if (a === 'Metabolic Syndrome') {
+          pLines.push('- Comprehensive lifestyle intervention to address all components of metabolic syndrome.');
+          pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.');
+          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
+          pLines.push('- Monitor and manage individual components: hyperglycemia, dyslipidemia, and hypertension.');
       } else if (a === 'Elevated Liver Enzymes') {
           pLines.push(`- Investigate etiology: ${drinksAlc ? 'alcohol use, ' : ''}viral hepatitis, medications, fatty liver.`);
           pLines.push(`- Avoid hepatotoxic medications${drinksAlc ? ' and alcohol' : ''}.`);
           pLines.push('- Repeat LFT in 4-8 weeks.');
           pLines.push('- Refer if persistently elevated or >3x ULN.');
-      } else if (a === 'Fatty Liver (NAFLD / MASLD)') {
-          pLines.push(`- แนะนำลดอาหารจำพวกแป้งและน้ำตาล ออกกำลังกายสม่ำเสมอ${drinksAlc ? ' และหลีกเลี่ยงแอลกอฮอล์' : ''}`);
+      } 
+      // ปรับปรุง Plan สำหรับ Fatty Liver (เพิ่ม Diet)
+      else if (a === 'Fatty Liver (NAFLD / MASLD)') {
+          pLines.push('- Diet: Recommend hypocaloric diet (500–1000 kcal deficit/day) / Mediterranean diet (high in mono- and polyunsaturated fats, vegetables, legumes, fish; low in refined carbohydrates, fructose, and red/processed meats). Avoid sugar-sweetened beverages and high-fructose corn syrup.');
+          pLines.push('- Weight reduction ≥10% of body weight.');
+          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity + resistance training.');
+          if (drinksAlc) pLines.push('- Alcohol abstinence.');
+          pLines.push('- Follow-up Ultrasound liver in 6-12 months.');
+      }
+      // Plan สำหรับ Microscopic Hematuria
+      else if (a === 'Microscopic Hematuria') {
+          pLines.push('- Repeat UA in 48–72 hours after resolving benign transient causes.');
+          pLines.push('- Refer urologist if UA still shows microscopic hematuria.');
+      }
+      // Plan สำหรับ Asymptomatic Bacteriuria
+      else if (a === 'Asymptomatic Bacteriuria') {
+          pLines.push('- Healthy, non-pregnant women: asymptomatic — no dysuria, frequency, urgency, suprapubic pain, flank pain, or fever.');
+          pLines.push('- No treatment required.');
+      }
+      // Plan สำหรับ Proteinuria
+      else if (a === 'Proteinuria') {
+          pLines.push('- Recheck UA next 1-2 weeks.');
       }
       assessPlanList.push({ title: a, plans: pLines });
   });
