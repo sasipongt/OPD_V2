@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Health Check-up Medical Record</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* CSS หลักคงเดิม */
+:root{
+  --bg:#0a0a0a;--bg2:#111;--bg3:#181818;--bg4:#222;
+  --border:#2a2a2a;--border2:#333;
+  --text:#e8e8e8;--text2:#999;--text3:#555;
+  --accent:#00d4aa;--accent2:#00a882;--accent-bg:rgba(0,212,170,.12);
+  --red:#ff4757;--red-bg:rgba(255,71,87,.12);
+  --yellow:#ffd700;--yellow-bg:rgba(255,215,0,.1);
+  --mono:'JetBrains Mono',monospace;
+  --sans:'IBM Plex Sans Thai',sans-serif;
+  --r:8px;--rl:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:14px;line-height:1.6}
+.shell{max-width:720px;margin:0 auto;padding:1.5rem 1.25rem 5rem}
+.hdr{display:flex;align-items:center;gap:10px;margin-bottom:1.75rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border)}
+.hdr-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);flex-shrink:0}
+.hdr-title{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.14em;text-transform:uppercase}
+.hdr-date{font-size:11px;color:var(--text3);margin-left:auto;font-family:var(--mono)}
+#view-form,#view-output{display:block}
+.sec{margin-bottom:1.75rem}
+.sec-lbl{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:.875rem;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+.lbl{font-size:10px;color:var(--text3);display:block;margin-bottom:4px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.iw{margin-bottom:.75rem}
+input[type=text],textarea{
+  width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);
+  padding:8px 12px;font-size:13px;font-family:var(--sans);color:var(--text);outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+input[type=text]:focus,textarea:focus,
+input[type=text]:focus-visible,textarea:focus-visible{
+  border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bg);
+}
+textarea{resize:vertical;line-height:1.6}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+.pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem}
+.pill{
+  border:0.5px solid var(--border2);border-radius:999px;padding:5px 14px;font-size:12px;
+  cursor:pointer;font-family:var(--mono);background:var(--bg3);color:var(--text2);
+  transition:all .15s;user-select:none;
+}
+.pill:hover,.pill:focus{border-color:var(--accent);color:var(--accent);outline:none}
+.pill.sel{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);box-shadow:0 0 8px rgba(0,212,170,.15)}
+.pill:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.inline-input{display:inline-block;width:120px;margin-left:6px;border-bottom:1px solid var(--border2)!important;border-radius:0;background:transparent!important;padding:2px 4px!important;}
+.gen-btn{
+  width:100%;background:var(--accent);border:none;border-radius:var(--r);
+  padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;color:#000;
+  font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;
+  transition:all .15s;margin-top:.5rem;
+}
+.gen-btn:hover,.gen-btn:focus{background:var(--accent2);box-shadow:0 0 20px rgba(0,212,170,.25);outline:none}
+.out-panel{display:none;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.25rem}
+.out-panel.active{display:block}
+.out-pre{font-family:var(--sans);font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap}
+.out-actions{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap}
+.copy-btn,.back-btn,.new-btn{
+  background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);
+  padding:7px 16px;font-size:10px;cursor:pointer;color:var(--text2);font-family:var(--mono);
+  transition:all .15s;letter-spacing:.08em;text-transform:uppercase;
+}
+.copy-btn:hover,.back-btn:hover{border-color:var(--accent);color:var(--accent)}
+.copy-btn.ok{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.new-btn:hover{border-color:var(--red);color:var(--red)}
+#toast-wrap{position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  background:var(--bg2);border:0.5px solid var(--accent);border-radius:var(--r);
+  padding:10px 16px;font-family:var(--mono);font-size:12px;color:var(--accent);
+  animation:toast-in .2s ease-out;max-width:300px;
+}
+@keyframes toast-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<div id="toast-wrap"></div>
+<div class="shell">
+  <div class="hdr">
+    <div class="hdr-dot"></div>
+    <div class="hdr-title">Check-up Note Template</div>
+    <div class="hdr-date" id="hdr-date"></div>
+  </div>
+
+  <!-- FORM VIEW -->
+  <div id="view-form">
+    
+    <!-- 1. Subjective & History -->
+    <div class="sec">
+      <div class="sec-lbl">Chief Complaint & History</div>
+      <div class="iw">
+        <label class="lbl">Chief Complaint (CC)</label>
+        <input type="text" id="in-cc" placeholder="มาตรวจสุขภาพประจำปี / ไม่มีอาการผิดปกติ" value="มาตรวจสุขภาพประจำปี / ไม่มีอาการผิดปกติ (Asymptomatic)"/>
+      </div>
+      
+      <div class="iw">
+        <label class="lbl">Past Medical History (PMH)</label>
+        <div class="pill-row" id="row-pmh"></div>
+        <input type="text" id="in-pmh" placeholder="ระบุโรคประจำตัวและระยะเวลา" style="display:none;margin-top:4px"/>
+      </div>
+
+      <div class="iw">
+        <label class="lbl">Past Surgical History (PSH)</label>
+        <div class="pill-row" id="row-psh"></div>
+        <input type="text" id="in-psh" placeholder="ระบุการผ่าตัด" style="display:none;margin-top:4px"/>
+      </div>
+    </div>
+
+    <!-- 2. Family History -->
+    <div class="sec">
+      <div class="sec-lbl">Family History (FH)</div>
+      <div class="pill-row" id="row-fh"></div>
+      <div class="g2">
+        <input type="text" id="in-fh-cancer" placeholder="ระบุชนิดมะเร็ง..." style="display:none"/>
+        <input type="text" id="in-fh-other" placeholder="ระบุโรคอื่นๆ..." style="display:none"/>
+      </div>
+    </div>
+
+    <!-- 3. Social & Lifestyle -->
+    <div class="sec">
+      <div class="sec-lbl">Social & Lifestyle History (SH)</div>
+      <div class="iw">
+        <label class="lbl">Smoking</label>
+        <div class="pill-row" id="row-smoke"></div>
+        <input type="text" id="in-smoke" placeholder="รายละเอียด (เช่น Quit 5 yrs หรือ 10 Cigs/day)" style="display:none;margin-top:4px"/>
+      </div>
+      <div class="iw">
+        <label class="lbl">Alcohol</label>
+        <div class="pill-row" id="row-alc"></div>
+        <input type="text" id="in-alc" placeholder="รายละเอียด (เช่น 2 drinks/week)" style="display:none;margin-top:4px"/>
+      </div>
+      <div class="iw">
+        <label class="lbl">Exercise</label>
+        <div class="pill-row" id="row-ex"></div>
+      </div>
+      <div class="iw">
+        <label class="lbl">Diet & Sleep</label>
+        <input type="text" id="in-diet" placeholder="ระบุการรับประทานอาหารและการนอนหลับ"/>
+      </div>
+      <div class="iw">
+        <label class="lbl">Current Medications / Supplements</label>
+        <input type="text" id="in-meds" placeholder="ยาและอาหารเสริมที่ทานประจำ"/>
+      </div>
+      <div class="iw">
+        <label class="lbl">Allergies</label>
+        <div class="pill-row" id="row-allergy"></div>
+        <input type="text" id="in-allergy" placeholder="ระบุชื่อยาที่แพ้" style="display:none;margin-top:4px"/>
+      </div>
+    </div>
+
+    <!-- 4. Investigation Results -->
+    <div class="sec">
+      <div class="sec-lbl">Investigation Results</div>
+      <div class="g2">
+        <div class="iw">
+          <label class="lbl">CBC</label>
+          <input type="text" id="lab-cbc"/>
+        </div>
+        <div class="iw">
+          <label class="lbl">Fasting Blood Sugar / HbA1c</label>
+          <input type="text" id="lab-fbs"/>
+        </div>
+      </div>
+      <div class="iw">
+        <label class="lbl">Lipid Profile</label>
+        <div class="g4">
+          <input type="text" id="lab-chol" placeholder="Chol"/>
+          <input type="text" id="lab-tg" placeholder="TG"/>
+          <input type="text" id="lab-hdl" placeholder="HDL"/>
+          <input type="text" id="lab-ldl" placeholder="LDL"/>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="iw">
+          <label class="lbl">Renal & Liver Function</label>
+          <input type="text" id="lab-rl" placeholder="BUN/Cr, LFT"/>
+        </div>
+        <div class="iw">
+          <label class="lbl">Urine Analysis (UA)</label>
+          <input type="text" id="lab-ua"/>
+        </div>
+      </div>
+      <div class="iw">
+        <label class="lbl">Imaging/Special Tests</label>
+        <input type="text" id="lab-img" placeholder="e.g., CXR, EKG, US Abdomen"/>
+      </div>
+    </div>
+
+    <!-- 5. Assessment -->
+    <div class="sec">
+      <div class="sec-lbl">Assessment</div>
+      <div class="iw">
+        <label class="lbl">1. Overall Status</label>
+        <input type="text" id="as-overall" placeholder="e.g., Healthy adult, Pre-diabetes, Dyslipidemia, MetS"/>
+      </div>
+      <div class="iw">
+        <label class="lbl">2. New Findings</label>
+        <div style="display:flex;gap:10px">
+          <button class="pill" id="btn-nf" onclick="toggleActive(this)">Select</button>
+          <input type="text" id="as-nf" placeholder="ระบุการค้นพบใหม่..." style="flex:1"/>
+        </div>
+      </div>
+      <div class="iw">
+        <label class="lbl">3. Status of Existing PMH</label>
+        <div style="display:flex;gap:10px">
+          <button class="pill" id="btn-spmh" onclick="toggleActive(this)">Select</button>
+          <input type="text" id="as-spmh" placeholder="e.g., Well-controlled HTN" style="flex:1"/>
+        </div>
+      </div>
+      <div class="iw">
+        <label class="lbl">4. Risk Stratification</label>
+        <input type="text" id="as-risk" placeholder="e.g., High cardiovascular risk based on family history..."/>
+      </div>
+    </div>
+
+    <!-- 6. Plan -->
+    <div class="sec">
+      <div class="sec-lbl">Plan</div>
+      <div class="iw">
+        <label class="lbl">Lifestyle Modification</label>
+        <div class="pill-row" id="row-life"></div>
+      </div>
+      <div class="iw">
+        <label class="lbl">Further Investigations</label>
+        <input type="text" id="pl-inv" placeholder="การตรวจเพิ่มเติม..."/>
+      </div>
+      <div class="iw">
+        <label class="lbl">Follow-up (F/U)</label>
+        <div style="margin-bottom:6px">
+          <button class="pill" id="btn-fu1" onclick="toggleActive(this)">Routine Annual Check-up next year</button>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="pill" id="btn-fu2" onclick="toggleActive(this)">F/U for abnormal results in:</button>
+          <input type="text" id="pl-fu" placeholder="___ Weeks/Months (e.g., repeat Lipid profile in 3 months)" style="flex:1"/>
+        </div>
+      </div>
+    </div>
+
+    <button class="gen-btn" type="button" onclick="generateOutput()">Generate Record</button>
+  </div>
+
+  <!-- OUTPUT VIEW -->
+  <div id="view-output" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.12em;text-transform:uppercase">Medical Record Output</span>
+    </div>
+    <div class="out-panel active" id="out-panel">
+      <pre class="out-pre" id="out-text"></pre>
+      <div class="out-actions">
+        <button class="copy-btn" onclick="copyOutput(this)">COPY TEXT</button>
+        <button class="back-btn" onclick="showForm()">← แก้ไขข้อมูล</button>
+        <button class="new-btn" style="margin-left:auto" onclick="location.reload()">+ CLEAR FORM</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('th-TH', {year:'numeric',month:'short',day:'numeric'});
+
+// State management variables
+let state = {
+  pmh: 'none', // none, known
+  psh: 'none', // none, yes
+  fh: { dm: false, htn: false, cad: false, cancer: false, other: false },
+  smoke: 'never', // never, ex, current
+  alc: 'none', // none, occ, freq
+  ex: 'none', // none, <150, >=150
+  allergy: 'none', // none, yes
+  life: { diet: false, ex: false, weight: false }
+};
+
+// Toggle general active class (for individual pills)
+function toggleActive(btn) { btn.classList.toggle('sel'); }
+
+// UI Builders
+function renderRadioGroup(containerId, options, activeVal, callback) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pill' + (activeVal === opt.val ? ' sel' : '');
+    btn.textContent = opt.label;
+    btn.onclick = () => callback(opt.val);
+    c.appendChild(btn);
+  });
+}
+
+function renderCheckboxGroup(containerId, options, stateObj, callback) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pill' + (stateObj[opt.val] ? ' sel' : '');
+    btn.textContent = opt.label;
+    btn.onclick = () => {
+      stateObj[opt.val] = !stateObj[opt.val];
+      callback();
+    };
+    c.appendChild(btn);
+  });
+}
+
+// PMH
+const updatePMH = (val) => {
+  state.pmh = val;
+  document.getElementById('in-pmh').style.display = val === 'known' ? 'block' : 'none';
+  renderRadioGroup('row-pmh', [{val:'none', label:'No underlying disease'}, {val:'known', label:'Known cases of...'}], state.pmh, updatePMH);
+};
+
+// PSH
+const updatePSH = (val) => {
+  state.psh = val;
+  document.getElementById('in-psh').style.display = val === 'yes' ? 'block' : 'none';
+  renderRadioGroup('row-psh', [{val:'none', label:'Denied'}, {val:'yes', label:'Yes...'}], state.psh, updatePSH);
+};
+
+// FH
+const updateFH = () => {
+  document.getElementById('in-fh-cancer').style.display = state.fh.cancer ? 'block' : 'none';
+  document.getElementById('in-fh-other').style.display = state.fh.other ? 'block' : 'none';
+  renderCheckboxGroup('row-fh', [
+    {val:'dm', label:'DM'}, {val:'htn', label:'HTN'}, {val:'cad', label:'CAD/Stroke'}, 
+    {val:'cancer', label:'Cancer'}, {val:'other', label:'Others'}
+  ], state.fh, updateFH);
+};
+
+// Smoke
+const updateSmoke = (val) => {
+  state.smoke = val;
+  document.getElementById('in-smoke').style.display = (val === 'ex' || val === 'current') ? 'block' : 'none';
+  renderRadioGroup('row-smoke', [{val:'never', label:'Never'}, {val:'ex', label:'Ex-smoker'}, {val:'current', label:'Current'}], state.smoke, updateSmoke);
+};
+
+// Alcohol
+const updateAlc = (val) => {
+  state.alc = val;
+  document.getElementById('in-alc').style.display = val === 'freq' ? 'block' : 'none';
+  renderRadioGroup('row-alc', [{val:'none', label:'None'}, {val:'occ', label:'Occasional'}, {val:'freq', label:'Frequent'}], state.alc, updateAlc);
+};
+
+// Exercise
+const updateEx = (val) => {
+  state.ex = val;
+  renderRadioGroup('row-ex', [{val:'none', label:'None'}, {val:'<150', label:'<150 min/wk'}, {val:'>=150', label:'≥150 min/wk (Moderate-Vigorous)'}], state.ex, updateEx);
+};
+
+// Allergy
+const updateAllergy = (val) => {
+  state.allergy = val;
+  document.getElementById('in-allergy').style.display = val === 'yes' ? 'block' : 'none';
+  renderRadioGroup('row-allergy', [{val:'none', label:'NKDA (No Known Drug Allergies)'}, {val:'yes', label:'Yes...'}], state.allergy, updateAllergy);
+};
+
+// Lifestyle
+const updateLife = () => {
+  renderCheckboxGroup('row-life', [
+    {val:'diet', label:'Diet (e.g., Low salt, Low fat, Diabetic diet)'}, 
+    {val:'ex', label:'Exercise (Recommend ≥150 min/wk aerobic + resistance)'}, 
+    {val:'weight', label:'Weight management / Stop smoking or alcohol'}
+  ], state.life, updateLife);
+};
+
+// Checkbox helper for text generation
+const chk = (condition) => condition ? '[x]' : '[ ]';
+
+function generateOutput() {
+  const getVal = (id) => document.getElementById(id).value.trim();
+  const getSel = (id) => document.getElementById(id).classList.contains('sel');
+
+  let text = `Chief Complaint (CC): ${getVal('in-cc') || 'มาตรวจสุขภาพประจำปี / ไม่มีอาการผิดปกติ (Asymptomatic)'}\n`;
+  text += `Past Medical History :\n`;
+  text += `${chk(state.pmh === 'none')} No underlying disease\n`;
+  text += `${chk(state.pmh === 'known')} Known cases of: ${getVal('in-pmh')}\n\n`;
+  
+  text += `Past Surgical History : ${chk(state.psh === 'none')} Denied  ${chk(state.psh === 'yes')} Yes: ${getVal('in-psh')}\n\n`;
+
+  text += `Family History (FH): (สำคัญมากสำหรับการคัดกรองความเสี่ยง)\n`;
+  text += `${chk(state.fh.dm)} DM  ${chk(state.fh.htn)} HTN  ${chk(state.fh.cad)} CAD/Stroke  `;
+  text += `${chk(state.fh.cancer)} Cancer (ระบุชนิด: ${getVal('in-fh-cancer')})  ${chk(state.fh.other)} Others: ${getVal('in-fh-other')}\n\n`;
+
+  text += `Social & Lifestyle History (SH):\n`;
+  text += `Smoking: ${chk(state.smoke === 'never')} Never  ${chk(state.smoke === 'ex')} Ex-smoker ${state.smoke==='ex' ? '(Quit '+getVal('in-smoke')+')' : '(Quit ___ yrs)'}  ${chk(state.smoke === 'current')} Current ${state.smoke==='current' ? '('+getVal('in-smoke')+')' : '(___ Cigs/day)'}\n`;
+  text += `Alcohol: ${chk(state.alc === 'none')} None  ${chk(state.alc === 'occ')} Occasional  ${chk(state.alc === 'freq')} Frequent ${state.alc==='freq' ? '('+getVal('in-alc')+')' : '(___ drinks/week)'}\n`;
+  text += `Exercise: ${chk(state.ex === 'none')} None  ${chk(state.ex === '<150')} <150 min/wk  ${chk(state.ex === '>=150')} ≥150 min/wk (Moderate-Vigorous)\n`;
+  text += `Diet & Sleep: ${getVal('in-diet')}\n`;
+  text += `Current Medications / Supplements: ${getVal('in-meds')}\n`;
+  text += `Allergies: ${chk(state.allergy === 'none')} NKDA (No Known Drug Allergies)  ${chk(state.allergy === 'yes')} Yes: ${getVal('in-allergy')}\n\n`;
+
+  text += `Investigation Results\n`;
+  text += `CBC: ${getVal('lab-cbc')}\n`;
+  text += `Fasting Blood Sugar / HbA1c: ${getVal('lab-fbs')}\n`;
+  text += `Lipid Profile: Chol: ${getVal('lab-chol')} / TG: ${getVal('lab-tg')} / HDL: ${getVal('lab-hdl')} / LDL: ${getVal('lab-ldl')}\n`;
+  text += `Renal & Liver Function (BUN/Cr, LFT): ${getVal('lab-rl')}\n`;
+  text += `Urine Analysis (UA): ${getVal('lab-ua')}\n`;
+  text += `Imaging/Special Tests (e.g., CXR, EKG, US Abdomen): ${getVal('lab-img')}\n\n`;
+
+  text += `Assessment\n`;
+  text += `1. Overall Status: ${getVal('as-overall')}\n`;
+  text += `2. ${chk(getSel('btn-nf'))} New Findings: ${getVal('as-nf')}\n`;
+  text += `3. ${chk(getSel('btn-spmh'))} Status of Existing PMH: ${getVal('as-spmh')}\n`;
+  text += `4. Risk Stratification: ${getVal('as-risk')}\n\n`;
+
+  text += `Plan\n`;
+  text += `Lifestyle Modification (คำแนะนำ):\n`;
+  text += `${chk(state.life.diet)} Diet (e.g., Low salt, Low fat, Diabetic diet)\n`;
+  text += `${chk(state.life.ex)} Exercise (Recommend ≥150 min/wk aerobic + resistance)\n`;
+  text += `${chk(state.life.weight)} Weight management / Stop smoking or alcohol\n\n`;
+
+  text += `Further Investigations: ${getVal('pl-inv')}\n\n`;
+
+  text += `Follow-up (F/U):\n`;
+  text += `${chk(getSel('btn-fu1'))} Routine Annual Check-up next year\n`;
+  text += `${chk(getSel('btn-fu2'))} F/U for abnormal results in: ${getVal('pl-fu')}`;
+
+  document.getElementById('out-text').textContent = text;
+  document.getElementById('view-form').style.display = 'none';
+  document.getElementById('view-output').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function showForm() {
+  document.getElementById('view-form').style.display = 'block';
+  document.getElementById('view-output').style.display = 'none';
+}
+
+function copyOutput(btn) {
+  const text = document.getElementById('out-text').textContent;
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'COPIED ✓';
+  btn.classList.add('ok');
+  setTimeout(() => {
+    btn.textContent = 'COPY TEXT';
+    btn.classList.remove('ok');
+  }, 1500);
+}
+
+// Init
+updatePMH('none');
+updatePSH('none');
+updateFH();
+updateSmoke('never');
+updateAlc('none');
+updateEx('none');
+updateAllergy('none');
+updateLife();
+</script>
+</body>
+</html>
