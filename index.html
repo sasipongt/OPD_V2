@@ -217,7 +217,7 @@ input[type=text]:focus,textarea:focus{
 
     <!-- 5. Assessment -->
     <div class="sec">
-      <div class="sec-lbl">Assessment</div>
+      <div class="sec-lbl">Assessment & Plan</div>
       
       <div class="iw">
         <label class="lbl">Common Problems Presets (กดเพื่อเพิ่มลงใน Assessment)</label>
@@ -248,11 +248,11 @@ input[type=text]:focus,textarea:focus{
       </div>
     </div>
 
-    <!-- 6. Plan -->
+    <!-- 6. General Plan -->
     <div class="sec">
-      <div class="sec-lbl">Plan</div>
+      <div class="sec-lbl">General Plan & Follow-up</div>
       <div class="iw">
-        <label class="lbl">Lifestyle Modification</label>
+        <label class="lbl">General Lifestyle Modification</label>
         <div class="pill-row" id="row-life"></div>
       </div>
       <div class="iw">
@@ -519,7 +519,6 @@ function generateOutput() {
 
   // --- Assessment Set Initialization ---
   let asSet = new Set(state.assessPresets);
-  let autoPlans = [];
 
   // Check FBS / HbA1c
   const fbsStr = getVal('lab-fbs');
@@ -597,75 +596,83 @@ function generateOutput() {
     text += invLines.join('\n') + '\n\n';
   }
 
-  // 6. Assessment
-  let asLines = [];
+  // 6. Assessment and Plan combined
+  let assessPlanList = [];
+  
   const overall = getVal('as-overall'); 
-  if (overall) asLines.push(`Overall Status: ${overall}`);
+  if (overall) assessPlanList.push({ title: `Overall Status: ${overall}`, plans: [] });
   
   const nf = getVal('as-nf'); 
-  if (getSel('btn-nf') && nf) asLines.push(`New Findings: ${nf}`);
+  if (getSel('btn-nf') && nf) assessPlanList.push({ title: `New Findings: ${nf}`, plans: [] });
   
   const spmh = getVal('as-spmh'); 
-  if (getSel('btn-spmh') && spmh) asLines.push(`Status of Existing PMH: ${spmh}`);
+  if (getSel('btn-spmh') && spmh) assessPlanList.push({ title: `Status of Existing PMH: ${spmh}`, plans: [] });
   
   const risk = getVal('as-risk'); 
-  if (risk) asLines.push(`Risk Stratification: ${risk}`);
+  if (risk) assessPlanList.push({ title: `Risk Stratification: ${risk}`, plans: [] });
   
-  // Merge Auto Assessment & Presets
+  // Checking conditionals
+  const drinksAlc = (state.alc === 'occ' || state.alc === 'freq');
+
   asSet.forEach(a => {
-      asLines.push(a);
+      let pLines = [];
+      if (a === 'DM') {
+          pLines.push('- แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ');
+      } else if (a === 'IFG') {
+          pLines.push('- Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.');
+          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
+      } else if (a === 'Dyslipidemia (LDL สูง)') {
+          pLines.push('- Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.');
+          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
+      } else if (a === 'Hypertriglyceridemia') {
+          pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.');
+          pLines.push('- Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.');
+          if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.');
+      } else if (a === 'Hyperuricemia / Gout') {
+          pLines.push(`- Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages${drinksAlc ? ', and alcohol (especially beer and spirits)' : ''}. Encourage low-fat dairy products and vegetable consumption.`);
+          pLines.push('- Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.');
+      } else if (a === 'Obesity / Overweight / Metabolic Syndrome') {
+          pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.');
+          pLines.push('- Caloric deficit of 500–750 kcal/day.');
+          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
+      } else if (a === 'Elevated Liver Enzymes') {
+          pLines.push(`- Investigate etiology: ${drinksAlc ? 'alcohol use, ' : ''}viral hepatitis, medications, fatty liver.`);
+          pLines.push(`- Avoid hepatotoxic medications${drinksAlc ? ' and alcohol' : ''}.`);
+          pLines.push('- Repeat LFT in 4-8 weeks.');
+          pLines.push('- Refer if persistently elevated or >3x ULN.');
+      } else if (a === 'Fatty Liver (NAFLD / MASLD)') {
+          pLines.push(`- แนะนำลดอาหารจำพวกแป้งและน้ำตาล ออกกำลังกายสม่ำเสมอ${drinksAlc ? ' และหลีกเลี่ยงแอลกอฮอล์' : ''}`);
+      }
+      assessPlanList.push({ title: a, plans: pLines });
   });
 
-  if (asLines.length > 0) {
-    text += `Assessment\n`;
-    asLines.forEach((l, i) => {
-      text += `${i + 1}. ${l}\n`;
+  if (assessPlanList.length > 0) {
+    text += `Assessment and Plan\n`;
+    assessPlanList.forEach((item, i) => {
+      text += `${i + 1}. ${item.title}\n`;
+      if (item.plans.length > 0) {
+        text += `   Plan\n`;
+        item.plans.forEach(p => {
+          text += `   ${p}\n`;
+        });
+      }
     });
     text += '\n';
   }
 
-  // Auto Plans based on Assessment Set
-  if (asSet.has('IFG')) {
-      autoPlans.push(`- IFG:\n  - Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.\n  - Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.\n  - Counselling for weight management if BMI ≥ 23 kg/m²`);
-  }
-
-  if (asSet.has('Dyslipidemia (LDL สูง)')) {
-      autoPlans.push(`- DLP (Dyslipidemia):\n  - Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.\n  - Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.\n  - Counselling for weight management if BMI ≥ 23 kg/m²`);
-  }
-  
-  if (asSet.has('Hypertriglyceridemia')) {
-      autoPlans.push(`- Hypertriglyceridemia:\n  - Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.\n  - Weight Loss: Target ≥ 5–10% body weight reduction if overweight/obese.\n  - Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.\n  - Alcohol: Strictly limit or eliminate`);
-  }
-
-  if (asSet.has('Hyperuricemia / Gout')) {
-      autoPlans.push(`- Hyperuricemia / Gout:\n  - Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages, and alcohol (especially beer and spirits). Encourage low-fat dairy products and vegetable consumption.\n  - Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.\n  - Counselling for weight management if BMI ≥ 23 kg/m²`);
-  }
-
-  if (asSet.has('Obesity / Overweight / Metabolic Syndrome')) {
-      autoPlans.push(`- Overweight/Obesity:\n  - Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.\n  - Caloric deficit of 500–750 kcal/day.\n  - Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.`);
-  }
-
-  if (asSet.has('Elevated Liver Enzymes')) {
-      autoPlans.push(`- Abnormal liver enzyme:\n  - Investigate etiology: alcohol use, viral hepatitis, medications, fatty liver\n  - Avoid hepatotoxic medications and alcohol\n  - Repeat LFT in 4-8 weeks\n  - Refer if persistently elevated or >3x ULN`);
-  }
-
-  // 7. Plan (Show only checked items + Auto Plans)
-  let planText = '';
+  // 7. General Plan & Follow Up
+  let genPlanText = '';
   let lifeArr = [];
   if (state.life.diet) lifeArr.push('- Diet (e.g., Low salt, Low fat, Diabetic diet)');
   if (state.life.ex) lifeArr.push('- Exercise (Recommend ≥150 min/wk aerobic + resistance)');
   if (state.life.weight) lifeArr.push('- Weight management / Stop smoking or alcohol');
   
   if (lifeArr.length > 0) {
-    planText += `Lifestyle Modification (คำแนะนำทั่วไป):\n${lifeArr.join('\n')}\n\n`;
-  }
-
-  if (autoPlans.length > 0) {
-    planText += `Disease-Specific Recommendations:\n${autoPlans.join('\n\n')}\n\n`;
+    genPlanText += `General Lifestyle Modification:\n${lifeArr.join('\n')}\n\n`;
   }
   
   const invPlan = getVal('pl-inv');
-  if (invPlan) planText += `Further Investigations: ${invPlan}\n\n`;
+  if (invPlan) genPlanText += `Further Investigations: ${invPlan}\n\n`;
 
   let fuArr = [];
   if (getSel('btn-fu1')) fuArr.push('Routine Annual Check-up next year');
@@ -674,11 +681,11 @@ function generateOutput() {
   if (getSel('btn-fu2')) fuArr.push(`F/U for abnormal results in: ${fu2 || '___'}`);
   
   if (fuArr.length > 0) {
-    planText += `Follow-up (F/U):\n${fuArr.map(x => '- ' + x).join('\n')}\n`;
+    genPlanText += `Follow-up (F/U):\n${fuArr.map(x => '- ' + x).join('\n')}\n`;
   }
 
-  if (planText) {
-    text += `Plan\n${planText}`;
+  if (genPlanText) {
+    text += `Further Plan & Follow-up\n${genPlanText}`;
   }
 
   document.getElementById('out-text').textContent = text.trim();
