@@ -50,6 +50,13 @@ input[type=text]:focus,textarea:focus{
 }
 .pill:hover{border-color:var(--accent);color:var(--accent)}
 .pill.sel{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);box-shadow:0 0 8px rgba(0,212,170,.15)}
+/* Subtype pill style */
+.pill.sub-sel{background:rgba(255,215,0,.12);border-color:var(--yellow);color:var(--yellow);box-shadow:0 0 8px rgba(255,215,0,.15)}
+.subtype-container{
+  background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);
+  padding:0.75rem;margin-top:0.5rem;display:none;
+}
+.subtype-container .lbl{color:var(--yellow);margin-bottom:8px}
 .gen-btn{
   width:100%;background:var(--accent);border:none;border-radius:var(--r);
   padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;color:#000;
@@ -224,6 +231,12 @@ input[type=text]:focus,textarea:focus{
         <div class="pill-row" id="row-as-presets"></div>
       </div>
 
+      <!-- Sub-type Container (แสดงเมื่อเลือก Problem ที่มี Sub-type) -->
+      <div class="subtype-container" id="subtype-container">
+        <label class="lbl" id="subtype-lbl">Sub-classification:</label>
+        <div class="pill-row" id="row-subtypes"></div>
+      </div>
+
       <div class="iw">
         <label class="lbl">1. Overall Status</label>
         <input type="text" id="as-overall" placeholder="e.g., Healthy adult"/>
@@ -293,6 +306,21 @@ input[type=text]:focus,textarea:focus{
 <script>
 document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('th-TH', {year:'numeric',month:'short',day:'numeric'});
 
+// ==================== SUBTYPE CONFIGURATION ====================
+// กำหนดว่าปัญหาไหนมี Sub-type อะไรบ้าง
+const SUBTYPE_OPTIONS = {
+  'Fatty Liver (NAFLD / MASLD)': [
+    {val:'mild', label:'Mild'},
+    {val:'moderate', label:'Moderate'},
+    {val:'severe', label:'Severe'}
+  ],
+  'Anemia': [
+    {val:'normocytic', label:'Normochromic Normocytic'},
+    {val:'microcytic', label:'Hypochromic Microcytic'},
+    {val:'macrocytic', label:'Macrocytic'}
+  ]
+};
+
 // State management variables
 let state = {
   pmh: 'none',
@@ -303,11 +331,18 @@ let state = {
   allergy: 'none',
   life: { diet: false, ex: false, weight: false },
   img: {},
-  assessPresets: new Set()
+  assessPresets: new Set(),
+  // Sub-type state: เก็บ key = problem name, value = subtype value หรือ 'none'
+  assessSubtypes: {}
 };
 
 const IMG_LIST = ['CXR', 'US abdomen', 'MMG', 'CT Calcium score', 'BMD', 'ABI', 'EKG', 'EST', 'Fibroscan'];
 IMG_LIST.forEach(k => state.img[k] = false);
+
+// เริ่มต้น Sub-type state
+Object.keys(SUBTYPE_OPTIONS).forEach(key => {
+  state.assessSubtypes[key] = 'none';
+});
 
 // แยก Obesity, Overweight, Metabolic Syndrome ออกจากกัน
 const ASSESS_PRESETS = [
@@ -319,6 +354,111 @@ const ASSESS_PRESETS = [
 
 // Toggle general active class
 function toggleActive(btn) { btn.classList.toggle('sel'); }
+
+// ==================== SUBTYPE RENDERING ====================
+function getActiveSubtypeProblems() {
+  // หาว่าใน assessPresets มีปัญหาที่มี Sub-type อะไรบ้าง
+  const active = [];
+  state.assessPresets.forEach(p => {
+    if (SUBTYPE_OPTIONS[p]) {
+      active.push(p);
+    }
+  });
+  return active;
+}
+
+function renderSubtypes() {
+  const container = document.getElementById('subtype-container');
+  const lbl = document.getElementById('subtype-lbl');
+  const row = document.getElementById('row-subtypes');
+  
+  const activeProblems = getActiveSubtypeProblems();
+  
+  if (activeProblems.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  // เคลียร์ row
+  row.innerHTML = '';
+  
+  // ถ้ามีปัญหาเดียว ให้แสดงเฉพาะ subtype ของปัญหานั้น
+  if (activeProblems.length === 1) {
+    const problemKey = activeProblems[0];
+    const options = SUBTYPE_OPTIONS[problemKey];
+    container.style.display = 'block';
+    lbl.textContent = `Sub-classification for ${problemKey}:`;
+    
+    // None option
+    const noneBtn = document.createElement('button');
+    noneBtn.type = 'button';
+    noneBtn.className = 'pill' + (state.assessSubtypes[problemKey] === 'none' ? ' sub-sel' : '');
+    noneBtn.textContent = 'Not specified';
+    noneBtn.onclick = () => {
+      state.assessSubtypes[problemKey] = 'none';
+      renderSubtypes();
+    };
+    row.appendChild(noneBtn);
+    
+    // Sub-type options
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pill' + (state.assessSubtypes[problemKey] === opt.val ? ' sub-sel' : '');
+      btn.textContent = opt.label;
+      btn.onclick = () => {
+        state.assessSubtypes[problemKey] = opt.val;
+        renderSubtypes();
+      };
+      row.appendChild(btn);
+    });
+  } 
+  // ถ้ามีหลายปัญหา แสดงแยกตามปัญหา
+  else {
+    container.style.display = 'block';
+    lbl.textContent = 'Sub-classification:';
+    
+    activeProblems.forEach(problemKey => {
+      const options = SUBTYPE_OPTIONS[problemKey];
+      
+      // หัวข้อปัญหา
+      const problemLabel = document.createElement('div');
+      problemLabel.style.cssText = 'font-size:10px;color:var(--text2);margin:8px 0 4px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;width:100%';
+      problemLabel.textContent = problemKey + ':';
+      row.appendChild(problemLabel);
+      
+      // Wrapper สำหรับปุ่มของปัญหานี้
+      const btnGroup = document.createElement('div');
+      btnGroup.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-bottom:4px';
+      
+      // None option
+      const noneBtn = document.createElement('button');
+      noneBtn.type = 'button';
+      noneBtn.className = 'pill' + (state.assessSubtypes[problemKey] === 'none' ? ' sub-sel' : '');
+      noneBtn.textContent = 'Not specified';
+      noneBtn.onclick = () => {
+        state.assessSubtypes[problemKey] = 'none';
+        renderSubtypes();
+      };
+      btnGroup.appendChild(noneBtn);
+      
+      // Sub-type options
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pill' + (state.assessSubtypes[problemKey] === opt.val ? ' sub-sel' : '');
+        btn.textContent = opt.label;
+        btn.onclick = () => {
+          state.assessSubtypes[problemKey] = opt.val;
+          renderSubtypes();
+        };
+        btnGroup.appendChild(btn);
+      });
+      
+      row.appendChild(btnGroup);
+    });
+  }
+}
 
 // UI Builders
 function renderRadioGroup(containerId, options, activeVal, callback) {
@@ -359,9 +499,17 @@ const updateAssessPresets = () => {
     btn.className = 'pill' + (state.assessPresets.has(p) ? ' sel' : '');
     btn.textContent = p;
     btn.onclick = () => {
-      if(state.assessPresets.has(p)) state.assessPresets.delete(p);
-      else state.assessPresets.add(p);
+      if(state.assessPresets.has(p)) {
+        state.assessPresets.delete(p);
+        // รีเซ็ต subtype เมื่อ unselect problem
+        if (SUBTYPE_OPTIONS[p]) {
+          state.assessSubtypes[p] = 'none';
+        }
+      } else {
+        state.assessPresets.add(p);
+      }
       updateAssessPresets();
+      renderSubtypes(); // อัปเดต subtype UI
     };
     c.appendChild(btn);
   });
@@ -454,6 +602,13 @@ const updateImgSel = () => {
     c.appendChild(btn);
   });
 };
+
+// Helper: หา label จาก subtype value
+function getSubtypeLabel(problemKey, subtypeVal) {
+  if (!SUBTYPE_OPTIONS[problemKey] || subtypeVal === 'none') return '';
+  const opt = SUBTYPE_OPTIONS[problemKey].find(o => o.val === subtypeVal);
+  return opt ? ` (${opt.label})` : '';
+}
 
 
 function generateOutput() {
@@ -617,6 +772,8 @@ function generateOutput() {
 
   asSet.forEach(a => {
       let pLines = [];
+      let displayTitle = a; // หัวข้อที่จะแสดง (อาจรวม subtype)
+      
       if (a === 'DM') {
           pLines.push('- แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ');
       } else if (a === 'IFG') {
@@ -654,13 +811,59 @@ function generateOutput() {
           pLines.push('- Repeat LFT in 4-8 weeks.');
           pLines.push('- Refer if persistently elevated or >3x ULN.');
       } 
-      // ปรับปรุง Plan สำหรับ Fatty Liver (เพิ่ม Diet)
+      // ==================== FATTY LIVER WITH SUBTYPE ====================
       else if (a === 'Fatty Liver (NAFLD / MASLD)') {
+          const subtype = state.assessSubtypes['Fatty Liver (NAFLD / MASLD)'] || 'none';
+          
+          // เพิ่ม subtype ในหัวข้อ
+          displayTitle = 'Fatty Liver (NAFLD / MASLD)' + getSubtypeLabel('Fatty Liver (NAFLD / MASLD)', subtype);
+          
           pLines.push('- Diet: Recommend hypocaloric diet (500–1000 kcal deficit/day) / Mediterranean diet (high in mono- and polyunsaturated fats, vegetables, legumes, fish; low in refined carbohydrates, fructose, and red/processed meats). Avoid sugar-sweetened beverages and high-fructose corn syrup.');
           pLines.push('- Weight reduction ≥10% of body weight.');
           pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity + resistance training.');
           if (drinksAlc) pLines.push('- Alcohol abstinence.');
-          pLines.push('- Follow-up Ultrasound liver in 6-12 months.');
+          
+          // Plan ต่างกันตาม severity
+          if (subtype === 'severe') {
+            pLines.push('- Refer to Gastroenterologist/Hepatologist for further evaluation.');
+            pLines.push('- Consider Fibroscan or liver biopsy to assess fibrosis stage.');
+            pLines.push('- Repeat LFT and Ultrasound liver in 3-6 months.');
+          } else if (subtype === 'moderate') {
+            pLines.push('- Repeat LFT and Ultrasound liver in 6 months.');
+          } else {
+            // mild หรือไม่ระบุ
+            pLines.push('- Follow-up Ultrasound liver in 6-12 months.');
+          }
+      }
+      // ==================== ANEMIA WITH SUBTYPE ====================
+      else if (a === 'Anemia') {
+          const subtype = state.assessSubtypes['Anemia'] || 'none';
+          
+          // เพิ่ม subtype ในหัวข้อ
+          displayTitle = 'Anemia' + getSubtypeLabel('Anemia', subtype);
+          
+          // Plan พื้นฐาน
+          pLines.push('- Evaluate for underlying causes: nutritional deficiency, chronic disease, blood loss, hemolysis, bone marrow disorders.');
+          
+          // Plan ต่างกันตามชนิดของ anemia
+          if (subtype === 'microcytic') {
+            pLines.push('- Likely Iron Deficiency Anemia: Check serum ferritin, serum iron, TIBC.');
+            pLines.push('- Investigate source of blood loss (GI endoscopy/colonoscopy if indicated, especially in men and postmenopausal women).');
+            pLines.push('- Consider trial of oral iron supplementation (e.g., ferrous sulfate 325 mg daily) with follow-up CBC in 4-8 weeks.');
+            pLines.push('- If thalassemia suspected (based on ethnicity/family history), check hemoglobin electrophoresis.');
+          } else if (subtype === 'normocytic') {
+            pLines.push('- Consider Anemia of Chronic Disease, early iron deficiency, chronic kidney disease, or mixed etiology.');
+            pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, BUN/Cr.');
+            pLines.push('- If no obvious cause, consider referral to hematologist for further evaluation.');
+          } else if (subtype === 'macrocytic') {
+            pLines.push('- Check vitamin B12 and folate levels.');
+            pLines.push('- Evaluate for alcohol use, liver disease, hypothyroidism, or medication-induced causes.');
+            pLines.push('- If B12/folate deficiency confirmed, initiate replacement therapy and monitor response.');
+          } else {
+            // ไม่ระบุ subtype
+            pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, vitamin B12, and folate levels.');
+            pLines.push('- Further workup guided by MCV and clinical context.');
+          }
       }
       // Plan สำหรับ Microscopic Hematuria
       else if (a === 'Microscopic Hematuria') {
@@ -676,7 +879,7 @@ function generateOutput() {
       else if (a === 'Proteinuria') {
           pLines.push('- Recheck UA next 1-2 weeks.');
       }
-      assessPlanList.push({ title: a, plans: pLines });
+      assessPlanList.push({ title: displayTitle, plans: pLines });
   });
 
   if (assessPlanList.length > 0) {
@@ -754,6 +957,7 @@ updateLife();
 initImaging();
 updateImgSel();
 updateAssessPresets();
+renderSubtypes();
 </script>
 </body>
 </html>
