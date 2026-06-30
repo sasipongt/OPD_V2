@@ -625,22 +625,28 @@ function generateOutput() {
   }
 
   // Auto Plans based on Assessment Set
-  if (asSet.has('DM')) {
-      autoPlans.push('- DM: แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ');
-  } else if (asSet.has('IFG')) {
-      autoPlans.push('- IFG: แนะนำลดการบริโภคอาหารหวาน น้ำหวาน แป้งขัดขาว และออกกำลังกายสม่ำเสมอเพื่อควบคุมน้ำหนัก ลดความเสี่ยงเบาหวาน');
+  if (asSet.has('IFG')) {
+      autoPlans.push(`- IFG:\n  - Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.\n  - Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.\n  - Counselling for weight management if BMI ≥ 23 kg/m²`);
   }
 
-  if (asSet.has('Dyslipidemia (LDL สูง)') || asSet.has('Hypertriglyceridemia')) {
-      autoPlans.push('- DLP/Hypertriglyceridemia: แนะนำหลีกเลี่ยงอาหารที่มีไขมันสูง ของทอด ของมัน กะทิ เนื้อสัตว์ติดมัน และออกกำลังกายแบบแอโรบิกสม่ำเสมอเพื่อลดระดับไขมัน');
+  if (asSet.has('Dyslipidemia (LDL สูง)')) {
+      autoPlans.push(`- DLP (Dyslipidemia):\n  - Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.\n  - Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.\n  - Counselling for weight management if BMI ≥ 23 kg/m²`);
+  }
+  
+  if (asSet.has('Hypertriglyceridemia')) {
+      autoPlans.push(`- Hypertriglyceridemia:\n  - Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.\n  - Weight Loss: Target ≥ 5–10% body weight reduction if overweight/obese.\n  - Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.\n  - Alcohol: Strictly limit or eliminate`);
   }
 
   if (asSet.has('Hyperuricemia / Gout')) {
-      autoPlans.push('- Uric/Gout: แนะนำงดเครื่องดื่มแอลกอฮอล์ หลีกเลี่ยงการรับประทานสัตว์ปีก เครื่องในสัตว์ และยอดผัก ดื่มน้ำให้เพียงพอ');
+      autoPlans.push(`- Hyperuricemia / Gout:\n  - Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages, and alcohol (especially beer and spirits). Encourage low-fat dairy products and vegetable consumption.\n  - Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.\n  - Counselling for weight management if BMI ≥ 23 kg/m²`);
   }
 
-  if (asSet.has('Obesity / Overweight / Metabolic Syndrome') || asSet.has('Fatty Liver (NAFLD / MASLD)')) {
-      autoPlans.push('- Weight/Fatty Liver: แนะนำควบคุมปริมาณแคลอรี่ ลดอาหารจำพวกแป้งและน้ำตาล ออกกำลังกายสม่ำเสมอเพื่อลดน้ำหนัก และหลีกเลี่ยงแอลกอฮอล์');
+  if (asSet.has('Obesity / Overweight / Metabolic Syndrome')) {
+      autoPlans.push(`- Overweight/Obesity:\n  - Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.\n  - Caloric deficit of 500–750 kcal/day.\n  - Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.`);
+  }
+
+  if (asSet.has('Elevated Liver Enzymes')) {
+      autoPlans.push(`- Abnormal liver enzyme:\n  - Investigate etiology: alcohol use, viral hepatitis, medications, fatty liver\n  - Avoid hepatotoxic medications and alcohol\n  - Repeat LFT in 4-8 weeks\n  - Refer if persistently elevated or >3x ULN`);
   }
 
   // 7. Plan (Show only checked items + Auto Plans)
@@ -651,11 +657,11 @@ function generateOutput() {
   if (state.life.weight) lifeArr.push('- Weight management / Stop smoking or alcohol');
   
   if (lifeArr.length > 0) {
-    planText += `Lifestyle Modification (คำแนะนำ):\n${lifeArr.join('\n')}\n\n`;
+    planText += `Lifestyle Modification (คำแนะนำทั่วไป):\n${lifeArr.join('\n')}\n\n`;
   }
 
   if (autoPlans.length > 0) {
-    planText += `Disease-Specific Recommendations:\n${autoPlans.join('\n')}\n\n`;
+    planText += `Disease-Specific Recommendations:\n${autoPlans.join('\n\n')}\n\n`;
   }
   
   const invPlan = getVal('pl-inv');
