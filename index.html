@@ -268,17 +268,17 @@ document.getElementById('hdr-date').textContent = new Date().toLocaleDateString(
 
 // State management variables
 let state = {
-  pmh: 'none', // none, known
-  psh: 'none', // none, yes
+  pmh: 'none',
+  psh: 'none',
   fh: { dm: false, htn: false, cad: false, cancer: false, other: false },
-  smoke: 'never', // never, ex, current
-  alc: 'none', // none, occ, freq
-  ex: 'none', // none, <150, >=150
-  allergy: 'none', // none, yes
+  smoke: 'never',
+  alc: 'none',
+  ex: 'none',
+  allergy: 'none',
   life: { diet: false, ex: false, weight: false }
 };
 
-// Toggle general active class (for individual pills)
+// Toggle general active class
 function toggleActive(btn) { btn.classList.toggle('sel'); }
 
 // UI Builders
@@ -371,59 +371,151 @@ const updateLife = () => {
   ], state.life, updateLife);
 };
 
-// Checkbox helper for text generation
-const chk = (condition) => condition ? '[x]' : '[ ]';
-
 function generateOutput() {
   const getVal = (id) => document.getElementById(id).value.trim();
   const getSel = (id) => document.getElementById(id).classList.contains('sel');
 
-  let text = `Chief Complaint (CC): ${getVal('in-cc') || 'มาตรวจสุขภาพประจำปี / ไม่มีอาการผิดปกติ (Asymptomatic)'}\n`;
-  text += `Past Medical History :\n`;
-  text += `${chk(state.pmh === 'none')} No underlying disease\n`;
-  text += `${chk(state.pmh === 'known')} Known cases of: ${getVal('in-pmh')}\n\n`;
+  let text = '';
+
+  // 1. CC
+  const cc = getVal('in-cc') || 'มาตรวจสุขภาพประจำปี / ไม่มีอาการผิดปกติ (Asymptomatic)';
+  text += `Chief Complaint (CC): ${cc}\n`;
+
+  // 2. PMH
+  text += `Past Medical History: `;
+  if (state.pmh === 'none') {
+    text += `No underlying disease\n`;
+  } else if (state.pmh === 'known') {
+    text += `Known cases of: ${getVal('in-pmh') || '-'}\n`;
+  } else {
+    text += `\n`;
+  }
+
+  // 3. PSH
+  text += `Past Surgical History: `;
+  if (state.psh === 'none') {
+    text += `Denied\n`;
+  } else if (state.psh === 'yes') {
+    text += `Yes: ${getVal('in-psh') || '-'}\n`;
+  } else {
+    text += `\n`;
+  }
   
-  text += `Past Surgical History : ${chk(state.psh === 'none')} Denied  ${chk(state.psh === 'yes')} Yes: ${getVal('in-psh')}\n\n`;
+  text += '\n';
 
-  text += `Family History (FH): (สำคัญมากสำหรับการคัดกรองความเสี่ยง)\n`;
-  text += `${chk(state.fh.dm)} DM  ${chk(state.fh.htn)} HTN  ${chk(state.fh.cad)} CAD/Stroke  `;
-  text += `${chk(state.fh.cancer)} Cancer (ระบุชนิด: ${getVal('in-fh-cancer')})  ${chk(state.fh.other)} Others: ${getVal('in-fh-other')}\n\n`;
+  // 4. FH (Omit brackets and unchecked items)
+  const fhArr = [];
+  if (state.fh.dm) fhArr.push('DM');
+  if (state.fh.htn) fhArr.push('HTN');
+  if (state.fh.cad) fhArr.push('CAD/Stroke');
+  if (state.fh.cancer) fhArr.push(`Cancer (${getVal('in-fh-cancer') || '-'})`);
+  if (state.fh.other) fhArr.push(`Others: ${getVal('in-fh-other') || '-'}`);
+  
+  text += `Family History (FH): ${fhArr.length > 0 ? fhArr.join(', ') : 'Denied'}\n\n`;
 
+  // 5. SH
   text += `Social & Lifestyle History (SH):\n`;
-  text += `Smoking: ${chk(state.smoke === 'never')} Never  ${chk(state.smoke === 'ex')} Ex-smoker ${state.smoke==='ex' ? '(Quit '+getVal('in-smoke')+')' : '(Quit ___ yrs)'}  ${chk(state.smoke === 'current')} Current ${state.smoke==='current' ? '('+getVal('in-smoke')+')' : '(___ Cigs/day)'}\n`;
-  text += `Alcohol: ${chk(state.alc === 'none')} None  ${chk(state.alc === 'occ')} Occasional  ${chk(state.alc === 'freq')} Frequent ${state.alc==='freq' ? '('+getVal('in-alc')+')' : '(___ drinks/week)'}\n`;
-  text += `Exercise: ${chk(state.ex === 'none')} None  ${chk(state.ex === '<150')} <150 min/wk  ${chk(state.ex === '>=150')} ≥150 min/wk (Moderate-Vigorous)\n`;
-  text += `Diet & Sleep: ${getVal('in-diet')}\n`;
-  text += `Current Medications / Supplements: ${getVal('in-meds')}\n`;
-  text += `Allergies: ${chk(state.allergy === 'none')} NKDA (No Known Drug Allergies)  ${chk(state.allergy === 'yes')} Yes: ${getVal('in-allergy')}\n\n`;
+  text += `Smoking: `;
+  if (state.smoke === 'never') text += 'Never\n';
+  else if (state.smoke === 'ex') text += `Ex-smoker (Quit ${getVal('in-smoke') || '___ yrs'})\n`;
+  else if (state.smoke === 'current') text += `Current (${getVal('in-smoke') || '___ Cigs/day'})\n`;
+  
+  text += `Alcohol: `;
+  if (state.alc === 'none') text += 'None\n';
+  else if (state.alc === 'occ') text += 'Occasional\n';
+  else if (state.alc === 'freq') text += `Frequent (${getVal('in-alc') || '___ drinks/week'})\n`;
+  
+  text += `Exercise: `;
+  if (state.ex === 'none') text += 'None\n';
+  else if (state.ex === '<150') text += '<150 min/wk\n';
+  else if (state.ex === '>=150') text += '≥150 min/wk (Moderate-Vigorous)\n';
 
-  text += `Investigation Results\n`;
-  text += `CBC: ${getVal('lab-cbc')}\n`;
-  text += `Fasting Blood Sugar / HbA1c: ${getVal('lab-fbs')}\n`;
-  text += `Lipid Profile: Chol: ${getVal('lab-chol')} / TG: ${getVal('lab-tg')} / HDL: ${getVal('lab-hdl')} / LDL: ${getVal('lab-ldl')}\n`;
-  text += `Renal & Liver Function (BUN/Cr, LFT): ${getVal('lab-rl')}\n`;
-  text += `Urine Analysis (UA): ${getVal('lab-ua')}\n`;
-  text += `Imaging/Special Tests (e.g., CXR, EKG, US Abdomen): ${getVal('lab-img')}\n\n`;
+  // Hide empty fields
+  const diet = getVal('in-diet');
+  if (diet) text += `Diet & Sleep: ${diet}\n`;
+  
+  const meds = getVal('in-meds');
+  if (meds) text += `Current Medications / Supplements: ${meds}\n`;
 
-  text += `Assessment\n`;
-  text += `1. Overall Status: ${getVal('as-overall')}\n`;
-  text += `2. ${chk(getSel('btn-nf'))} New Findings: ${getVal('as-nf')}\n`;
-  text += `3. ${chk(getSel('btn-spmh'))} Status of Existing PMH: ${getVal('as-spmh')}\n`;
-  text += `4. Risk Stratification: ${getVal('as-risk')}\n\n`;
+  text += `Allergies: `;
+  if (state.allergy === 'none') text += 'NKDA (No Known Drug Allergies)\n';
+  else if (state.allergy === 'yes') text += `Yes: ${getVal('in-allergy') || '-'}\n`;
+  
+  text += '\n';
 
-  text += `Plan\n`;
-  text += `Lifestyle Modification (คำแนะนำ):\n`;
-  text += `${chk(state.life.diet)} Diet (e.g., Low salt, Low fat, Diabetic diet)\n`;
-  text += `${chk(state.life.ex)} Exercise (Recommend ≥150 min/wk aerobic + resistance)\n`;
-  text += `${chk(state.life.weight)} Weight management / Stop smoking or alcohol\n\n`;
+  // 6. Investigations (Show only if filled)
+  let invLines = [];
+  const cbc = getVal('lab-cbc'); if (cbc) invLines.push(`CBC: ${cbc}`);
+  const fbs = getVal('lab-fbs'); if (fbs) invLines.push(`Fasting Blood Sugar / HbA1c: ${fbs}`);
+  
+  const chol = getVal('lab-chol'), tg = getVal('lab-tg'), hdl = getVal('lab-hdl'), ldl = getVal('lab-ldl');
+  let lipidArr = [];
+  if (chol) lipidArr.push(`Chol: ${chol}`);
+  if (tg) lipidArr.push(`TG: ${tg}`);
+  if (hdl) lipidArr.push(`HDL: ${hdl}`);
+  if (ldl) lipidArr.push(`LDL: ${ldl}`);
+  if (lipidArr.length > 0) invLines.push(`Lipid Profile: ${lipidArr.join(' / ')}`);
+  
+  const rl = getVal('lab-rl'); if (rl) invLines.push(`Renal & Liver Function (BUN/Cr, LFT): ${rl}`);
+  const ua = getVal('lab-ua'); if (ua) invLines.push(`Urine Analysis (UA): ${ua}`);
+  const img = getVal('lab-img'); if (img) invLines.push(`Imaging/Special Tests: ${img}`);
 
-  text += `Further Investigations: ${getVal('pl-inv')}\n\n`;
+  if (invLines.length > 0) {
+    text += `Investigation Results\n`;
+    text += invLines.join('\n') + '\n\n';
+  }
 
-  text += `Follow-up (F/U):\n`;
-  text += `${chk(getSel('btn-fu1'))} Routine Annual Check-up next year\n`;
-  text += `${chk(getSel('btn-fu2'))} F/U for abnormal results in: ${getVal('pl-fu')}`;
+  // 7. Assessment (Auto-renumber and show only filled)
+  let asLines = [];
+  const overall = getVal('as-overall'); 
+  if (overall) asLines.push(`Overall Status: ${overall}`);
+  
+  const nf = getVal('as-nf'); 
+  if (getSel('btn-nf') && nf) asLines.push(`New Findings: ${nf}`);
+  
+  const spmh = getVal('as-spmh'); 
+  if (getSel('btn-spmh') && spmh) asLines.push(`Status of Existing PMH: ${spmh}`);
+  
+  const risk = getVal('as-risk'); 
+  if (risk) asLines.push(`Risk Stratification: ${risk}`);
+  
+  if (asLines.length > 0) {
+    text += `Assessment\n`;
+    asLines.forEach((l, i) => {
+      text += `${i + 1}. ${l}\n`;
+    });
+    text += '\n';
+  }
 
-  document.getElementById('out-text').textContent = text;
+  // 8. Plan (Show only checked items)
+  let planText = '';
+  let lifeArr = [];
+  if (state.life.diet) lifeArr.push('- Diet (e.g., Low salt, Low fat, Diabetic diet)');
+  if (state.life.ex) lifeArr.push('- Exercise (Recommend ≥150 min/wk aerobic + resistance)');
+  if (state.life.weight) lifeArr.push('- Weight management / Stop smoking or alcohol');
+  
+  if (lifeArr.length > 0) {
+    planText += `Lifestyle Modification (คำแนะนำ):\n${lifeArr.join('\n')}\n\n`;
+  }
+  
+  const invPlan = getVal('pl-inv');
+  if (invPlan) planText += `Further Investigations: ${invPlan}\n\n`;
+
+  let fuArr = [];
+  if (getSel('btn-fu1')) fuArr.push('Routine Annual Check-up next year');
+  
+  const fu2 = getVal('pl-fu');
+  if (getSel('btn-fu2')) fuArr.push(`F/U for abnormal results in: ${fu2 || '___'}`);
+  
+  if (fuArr.length > 0) {
+    planText += `Follow-up (F/U):\n${fuArr.map(x => '- ' + x).join('\n')}\n`;
+  }
+
+  if (planText) {
+    text += `Plan\n${planText}`;
+  }
+
+  document.getElementById('out-text').textContent = text.trim();
   document.getElementById('view-form').style.display = 'none';
   document.getElementById('view-output').style.display = 'block';
   window.scrollTo(0,0);
