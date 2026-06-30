@@ -6,7 +6,7 @@
 <title>Health Check-up Medical Record</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-/* CSS หลักคงเดิม */
+/* CSS หลัก */
 :root{
   --bg:#0a0a0a;--bg2:#111;--bg3:#181818;--bg4:#222;
   --border:#2a2a2a;--border2:#333;
@@ -36,11 +36,9 @@ input[type=text],textarea{
   padding:8px 12px;font-size:13px;font-family:var(--sans);color:var(--text);outline:none;
   transition:border-color .15s,box-shadow .15s;
 }
-input[type=text]:focus,textarea:focus,
-input[type=text]:focus-visible,textarea:focus-visible{
+input[type=text]:focus,textarea:focus{
   border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bg);
 }
-textarea{resize:vertical;line-height:1.6}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
 .pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem}
@@ -49,17 +47,15 @@ textarea{resize:vertical;line-height:1.6}
   cursor:pointer;font-family:var(--mono);background:var(--bg3);color:var(--text2);
   transition:all .15s;user-select:none;
 }
-.pill:hover,.pill:focus{border-color:var(--accent);color:var(--accent);outline:none}
+.pill:hover{border-color:var(--accent);color:var(--accent)}
 .pill.sel{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);box-shadow:0 0 8px rgba(0,212,170,.15)}
-.pill:focus-visible{box-shadow:0 0 0 2px var(--accent)}
-.inline-input{display:inline-block;width:120px;margin-left:6px;border-bottom:1px solid var(--border2)!important;border-radius:0;background:transparent!important;padding:2px 4px!important;}
 .gen-btn{
   width:100%;background:var(--accent);border:none;border-radius:var(--r);
   padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;color:#000;
   font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;
   transition:all .15s;margin-top:.5rem;
 }
-.gen-btn:hover,.gen-btn:focus{background:var(--accent2);box-shadow:0 0 20px rgba(0,212,170,.25);outline:none}
+.gen-btn:hover{background:var(--accent2);box-shadow:0 0 20px rgba(0,212,170,.25)}
 .out-panel{display:none;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.25rem}
 .out-panel.active{display:block}
 .out-pre{font-family:var(--sans);font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap}
@@ -72,17 +68,9 @@ textarea{resize:vertical;line-height:1.6}
 .copy-btn:hover,.back-btn:hover{border-color:var(--accent);color:var(--accent)}
 .copy-btn.ok{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 .new-btn:hover{border-color:var(--red);color:var(--red)}
-#toast-wrap{position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{
-  background:var(--bg2);border:0.5px solid var(--accent);border-radius:var(--r);
-  padding:10px 16px;font-family:var(--mono);font-size:12px;color:var(--accent);
-  animation:toast-in .2s ease-out;max-width:300px;
-}
-@keyframes toast-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 </style>
 </head>
 <body>
-<div id="toast-wrap"></div>
 <div class="shell">
   <div class="hdr">
     <div class="hdr-dot"></div>
@@ -105,12 +93,6 @@ textarea{resize:vertical;line-height:1.6}
         <label class="lbl">Past Medical History (PMH)</label>
         <div class="pill-row" id="row-pmh"></div>
         <input type="text" id="in-pmh" placeholder="ระบุโรคประจำตัวและระยะเวลา" style="display:none;margin-top:4px"/>
-      </div>
-
-      <div class="iw">
-        <label class="lbl">Past Surgical History (PSH)</label>
-        <div class="pill-row" id="row-psh"></div>
-        <input type="text" id="in-psh" placeholder="ระบุการผ่าตัด" style="display:none;margin-top:4px"/>
       </div>
     </div>
 
@@ -188,18 +170,24 @@ textarea{resize:vertical;line-height:1.6}
           <input type="text" id="lab-ua"/>
         </div>
       </div>
+      
+      <!-- Imaging & Special Tests Selection -->
       <div class="iw">
-        <label class="lbl">Imaging/Special Tests</label>
-        <input type="text" id="lab-img" placeholder="e.g., CXR, EKG, US Abdomen"/>
+        <label class="lbl">Imaging & Special Tests (เลือกหัวข้อที่จะกรอก)</label>
+        <div class="pill-row" id="row-img-sel"></div>
+        <div id="img-inputs-container"></div>
       </div>
     </div>
 
     <!-- 5. Assessment -->
     <div class="sec">
       <div class="sec-lbl">Assessment</div>
+      <div class="iw" style="margin-bottom:8px">
+        <label class="lbl" style="color:var(--accent)">* ระบบจะเพิ่ม Assessment โรค DLP, IFG, DM ให้โดยอัตโนมัติหากค่า Lab เกินเกณฑ์</label>
+      </div>
       <div class="iw">
         <label class="lbl">1. Overall Status</label>
-        <input type="text" id="as-overall" placeholder="e.g., Healthy adult, Pre-diabetes, Dyslipidemia, MetS"/>
+        <input type="text" id="as-overall" placeholder="e.g., Healthy adult"/>
       </div>
       <div class="iw">
         <label class="lbl">2. New Findings</label>
@@ -217,7 +205,7 @@ textarea{resize:vertical;line-height:1.6}
       </div>
       <div class="iw">
         <label class="lbl">4. Risk Stratification</label>
-        <input type="text" id="as-risk" placeholder="e.g., High cardiovascular risk based on family history..."/>
+        <input type="text" id="as-risk" placeholder="e.g., High cardiovascular risk..."/>
       </div>
     </div>
 
@@ -239,7 +227,7 @@ textarea{resize:vertical;line-height:1.6}
         </div>
         <div style="display:flex;gap:10px">
           <button class="pill" id="btn-fu2" onclick="toggleActive(this)">F/U for abnormal results in:</button>
-          <input type="text" id="pl-fu" placeholder="___ Weeks/Months (e.g., repeat Lipid profile in 3 months)" style="flex:1"/>
+          <input type="text" id="pl-fu" placeholder="___ Weeks/Months" style="flex:1"/>
         </div>
       </div>
     </div>
@@ -269,14 +257,17 @@ document.getElementById('hdr-date').textContent = new Date().toLocaleDateString(
 // State management variables
 let state = {
   pmh: 'none',
-  psh: 'none',
   fh: { dm: false, htn: false, cad: false, cancer: false, other: false },
   smoke: 'never',
   alc: 'none',
   ex: 'none',
   allergy: 'none',
-  life: { diet: false, ex: false, weight: false }
+  life: { diet: false, ex: false, weight: false },
+  img: {}
 };
+
+const IMG_LIST = ['CXR', 'US abdomen', 'MMG', 'CT Calcium score', 'BMD', 'ABI', 'EKG', 'EST'];
+IMG_LIST.forEach(k => state.img[k] = false);
 
 // Toggle general active class
 function toggleActive(btn) { btn.classList.toggle('sel'); }
@@ -316,13 +307,6 @@ const updatePMH = (val) => {
   state.pmh = val;
   document.getElementById('in-pmh').style.display = val === 'known' ? 'block' : 'none';
   renderRadioGroup('row-pmh', [{val:'none', label:'No underlying disease'}, {val:'known', label:'Known cases of...'}], state.pmh, updatePMH);
-};
-
-// PSH
-const updatePSH = (val) => {
-  state.psh = val;
-  document.getElementById('in-psh').style.display = val === 'yes' ? 'block' : 'none';
-  renderRadioGroup('row-psh', [{val:'none', label:'Denied'}, {val:'yes', label:'Yes...'}], state.psh, updatePSH);
 };
 
 // FH
@@ -371,6 +355,42 @@ const updateLife = () => {
   ], state.life, updateLife);
 };
 
+// Imaging Setup
+const initImaging = () => {
+  const cont = document.getElementById('img-inputs-container');
+  IMG_LIST.forEach(k => {
+    const safeK = k.replace(/\s+/g, '');
+    const div = document.createElement('div');
+    div.className = 'iw';
+    div.id = 'img-div-' + safeK;
+    div.style.display = 'none';
+    div.style.marginBottom = '6px';
+    div.innerHTML = `<label class="lbl">${k}</label><input type="text" id="img-in-${safeK}" placeholder="ผลตรวจ ${k}..."/>`;
+    cont.appendChild(div);
+  });
+};
+
+const updateImgSel = () => {
+  const c = document.getElementById('row-img-sel');
+  c.innerHTML = '';
+  IMG_LIST.forEach(k => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pill' + (state.img[k] ? ' sel' : '');
+    btn.textContent = k;
+    btn.onclick = () => {
+      state.img[k] = !state.img[k];
+      const safeK = k.replace(/\s+/g, '');
+      const div = document.getElementById('img-div-' + safeK);
+      if(div) div.style.display = state.img[k] ? 'block' : 'none';
+      if(!state.img[k]) document.getElementById('img-in-'+safeK).value = '';
+      updateImgSel();
+    };
+    c.appendChild(btn);
+  });
+};
+
+
 function generateOutput() {
   const getVal = (id) => document.getElementById(id).value.trim();
   const getSel = (id) => document.getElementById(id).classList.contains('sel');
@@ -390,20 +410,10 @@ function generateOutput() {
   } else {
     text += `\n`;
   }
-
-  // 3. PSH
-  text += `Past Surgical History: `;
-  if (state.psh === 'none') {
-    text += `Denied\n`;
-  } else if (state.psh === 'yes') {
-    text += `Yes: ${getVal('in-psh') || '-'}\n`;
-  } else {
-    text += `\n`;
-  }
   
   text += '\n';
 
-  // 4. FH (Omit brackets and unchecked items)
+  // 3. FH (Omit brackets and unchecked items)
   const fhArr = [];
   if (state.fh.dm) fhArr.push('DM');
   if (state.fh.htn) fhArr.push('HTN');
@@ -413,7 +423,7 @@ function generateOutput() {
   
   text += `Family History (FH): ${fhArr.length > 0 ? fhArr.join(', ') : 'Denied'}\n\n`;
 
-  // 5. SH
+  // 4. SH
   text += `Social & Lifestyle History (SH):\n`;
   text += `Smoking: `;
   if (state.smoke === 'never') text += 'Never\n';
@@ -443,29 +453,75 @@ function generateOutput() {
   
   text += '\n';
 
-  // 6. Investigations (Show only if filled)
+  // --- Auto Assessment Processing ---
+  let autoAsses = [];
+  let autoPlans = [];
+
+  // Check FBS / HbA1c
+  const fbsStr = getVal('lab-fbs');
+  if(fbsStr) {
+      const nums = fbsStr.match(/\d+(\.\d+)?/g);
+      if (nums) {
+          let isDM = false, isIFG = false;
+          nums.forEach(nStr => {
+              const n = parseFloat(nStr);
+              if (n >= 126 || n >= 6.5) isDM = true;
+              else if ((n >= 100 && n < 126) || (n >= 5.7 && n < 6.5)) isIFG = true;
+          });
+          if (isDM) {
+              autoAsses.push('Diabetes Mellitus (DM)');
+              autoPlans.push('- DM: แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ');
+          } else if (isIFG) {
+              autoAsses.push('Impaired Fasting Glucose (IFG)');
+              autoPlans.push('- IFG: แนะนำลดการบริโภคอาหารหวาน น้ำหวาน แป้งขัดขาว และออกกำลังกายสม่ำเสมอเพื่อควบคุมน้ำหนัก ลดความเสี่ยงเบาหวาน');
+          }
+      }
+  }
+
+  // Check Lipids
+  const ldlStr = getVal('lab-ldl');
+  const cholStr = getVal('lab-chol');
+  const tgStr = getVal('lab-tg');
+  let isDlp = false;
+  if (ldlStr.match(/\d+/) && parseFloat(ldlStr.match(/\d+/)[0]) >= 130) isDlp = true;
+  if (cholStr.match(/\d+/) && parseFloat(cholStr.match(/\d+/)[0]) >= 200) isDlp = true;
+  if (tgStr.match(/\d+/) && parseFloat(tgStr.match(/\d+/)[0]) >= 150) isDlp = true;
+  
+  if (isDlp) {
+      autoAsses.push('Dyslipidemia (DLP)');
+      autoPlans.push('- DLP: แนะนำหลีกเลี่ยงอาหารที่มีไขมันสูง ของทอด ของมัน กะทิ เนื้อสัตว์ติดมัน และออกกำลังกายแบบแอโรบิกสม่ำเสมอเพื่อลดระดับไขมัน');
+  }
+
+
+  // 5. Investigations (Show only if filled)
   let invLines = [];
   const cbc = getVal('lab-cbc'); if (cbc) invLines.push(`CBC: ${cbc}`);
-  const fbs = getVal('lab-fbs'); if (fbs) invLines.push(`Fasting Blood Sugar / HbA1c: ${fbs}`);
+  if (fbsStr) invLines.push(`Fasting Blood Sugar / HbA1c: ${fbsStr}`);
   
-  const chol = getVal('lab-chol'), tg = getVal('lab-tg'), hdl = getVal('lab-hdl'), ldl = getVal('lab-ldl');
   let lipidArr = [];
-  if (chol) lipidArr.push(`Chol: ${chol}`);
-  if (tg) lipidArr.push(`TG: ${tg}`);
-  if (hdl) lipidArr.push(`HDL: ${hdl}`);
-  if (ldl) lipidArr.push(`LDL: ${ldl}`);
+  if (cholStr) lipidArr.push(`Chol: ${cholStr}`);
+  if (tgStr) lipidArr.push(`TG: ${tgStr}`);
+  const hdlStr = getVal('lab-hdl'); if (hdlStr) lipidArr.push(`HDL: ${hdlStr}`);
+  if (ldlStr) lipidArr.push(`LDL: ${ldlStr}`);
   if (lipidArr.length > 0) invLines.push(`Lipid Profile: ${lipidArr.join(' / ')}`);
   
   const rl = getVal('lab-rl'); if (rl) invLines.push(`Renal & Liver Function (BUN/Cr, LFT): ${rl}`);
   const ua = getVal('lab-ua'); if (ua) invLines.push(`Urine Analysis (UA): ${ua}`);
-  const img = getVal('lab-img'); if (img) invLines.push(`Imaging/Special Tests: ${img}`);
+  
+  // Imaging processing
+  IMG_LIST.forEach(k => {
+      if(state.img[k]) {
+          const val = getVal('img-in-' + k.replace(/\s+/g, ''));
+          if (val) invLines.push(`${k}: ${val}`);
+      }
+  });
 
   if (invLines.length > 0) {
     text += `Investigation Results\n`;
     text += invLines.join('\n') + '\n\n';
   }
 
-  // 7. Assessment (Auto-renumber and show only filled)
+  // 6. Assessment (Auto-renumber and show only filled)
   let asLines = [];
   const overall = getVal('as-overall'); 
   if (overall) asLines.push(`Overall Status: ${overall}`);
@@ -479,6 +535,11 @@ function generateOutput() {
   const risk = getVal('as-risk'); 
   if (risk) asLines.push(`Risk Stratification: ${risk}`);
   
+  // Merge Auto Assessment
+  autoAsses.forEach(a => {
+      asLines.push(a);
+  });
+
   if (asLines.length > 0) {
     text += `Assessment\n`;
     asLines.forEach((l, i) => {
@@ -487,7 +548,7 @@ function generateOutput() {
     text += '\n';
   }
 
-  // 8. Plan (Show only checked items)
+  // 7. Plan (Show only checked items + Auto Plans)
   let planText = '';
   let lifeArr = [];
   if (state.life.diet) lifeArr.push('- Diet (e.g., Low salt, Low fat, Diabetic diet)');
@@ -496,6 +557,10 @@ function generateOutput() {
   
   if (lifeArr.length > 0) {
     planText += `Lifestyle Modification (คำแนะนำ):\n${lifeArr.join('\n')}\n\n`;
+  }
+
+  if (autoPlans.length > 0) {
+    planText += `Disease-Specific Recommendations:\n${autoPlans.join('\n')}\n\n`;
   }
   
   const invPlan = getVal('pl-inv');
@@ -539,13 +604,14 @@ function copyOutput(btn) {
 
 // Init
 updatePMH('none');
-updatePSH('none');
 updateFH();
 updateSmoke('never');
 updateAlc('none');
 updateEx('none');
 updateAllergy('none');
 updateLife();
+initImaging();
+updateImgSel();
 </script>
 </body>
 </html>
