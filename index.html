@@ -14,6 +14,7 @@
   --accent:#00d4aa;--accent2:#00a882;--accent-bg:rgba(0,212,170,.12);
   --red:#ff4757;--red-bg:rgba(255,71,87,.12);
   --yellow:#ffd700;--yellow-bg:rgba(255,215,0,.1);
+  --blue:#4a9eff;--blue-bg:rgba(74,158,255,.12);
   --mono:'JetBrains Mono',monospace;
   --sans:'IBM Plex Sans Thai',sans-serif;
   --r:8px;--rl:12px;
@@ -50,7 +51,6 @@ input[type=text]:focus,textarea:focus{
 }
 .pill:hover{border-color:var(--accent);color:var(--accent)}
 .pill.sel{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);box-shadow:0 0 8px rgba(0,212,170,.15)}
-/* Subtype pill style */
 .pill.sub-sel{background:rgba(255,215,0,.12);border-color:var(--yellow);color:var(--yellow);box-shadow:0 0 8px rgba(255,215,0,.15)}
 .subtype-container{
   background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);
@@ -76,6 +76,58 @@ input[type=text]:focus,textarea:focus{
 .copy-btn:hover,.back-btn:hover{border-color:var(--accent);color:var(--accent)}
 .copy-btn.ok{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 .new-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ========== TAB STYLES ========== */
+.tab-nav{
+  display:flex;gap:4px;margin-bottom:0;border-bottom:0.5px solid var(--border);
+}
+.tab-btn{
+  background:transparent;border:none;border-bottom:2px solid transparent;
+  padding:8px 16px;font-size:11px;cursor:pointer;color:var(--text3);
+  font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;
+  transition:all .15s;margin-bottom:-0.5px;
+}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.active{
+  color:var(--accent);border-bottom-color:var(--accent);
+}
+.tab-btn.patient-tab.active{
+  color:var(--blue);border-bottom-color:var(--blue);
+}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* Patient Advice Styles */
+.advice-section{margin-bottom:1.5rem}
+.advice-section-title{
+  font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;
+  padding-bottom:6px;border-bottom:0.5px solid var(--border);
+}
+.advice-block{
+  background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);
+  padding:1rem;margin-bottom:0.75rem;
+}
+.advice-title{
+  font-family:var(--mono);font-size:11px;font-weight:700;color:var(--blue);
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;
+}
+.advice-text{
+  font-family:var(--sans);font-size:13px;line-height:1.8;color:var(--text);
+}
+.advice-sub{
+  font-family:var(--sans);font-size:13px;line-height:1.8;color:var(--text2);
+  margin-top:6px;padding-left:12px;border-left:2px solid var(--border2);
+}
+.advice-warn{
+  background:var(--red-bg);border:0.5px solid rgba(255,71,87,.25);border-radius:var(--r);
+  padding:0.75rem 1rem;margin-top:0.75rem;
+}
+.advice-warn .advice-title{color:var(--red)}
+.no-advice{
+  text-align:center;padding:2rem 1rem;color:var(--text3);
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+}
 </style>
 </head>
 <body>
@@ -89,14 +141,12 @@ input[type=text]:focus,textarea:focus{
   <!-- FORM VIEW -->
   <div id="view-form">
     
-    <!-- 1. Subjective & History -->
     <div class="sec">
       <div class="sec-lbl">Chief Complaint & History</div>
       <div class="iw">
         <label class="lbl">Chief Complaint (CC)</label>
         <input type="text" id="in-cc" placeholder="มาตรวจสุขภาพประจำปี / ไม่มีอาการผิดปกติ" value="มาตรวจสุขภาพประจำปี / ไม่มีอาการผิดปกติ (Asymptomatic)"/>
       </div>
-      
       <div class="iw">
         <label class="lbl">Past Medical History (PMH)</label>
         <div class="pill-row" id="row-pmh"></div>
@@ -104,7 +154,6 @@ input[type=text]:focus,textarea:focus{
       </div>
     </div>
 
-    <!-- 2. Family History -->
     <div class="sec">
       <div class="sec-lbl">Family History (FH)</div>
       <div class="pill-row" id="row-fh"></div>
@@ -114,174 +163,42 @@ input[type=text]:focus,textarea:focus{
       </div>
     </div>
 
-    <!-- 3. Social & Lifestyle -->
     <div class="sec">
       <div class="sec-lbl">Social & Lifestyle History (SH)</div>
-      <div class="iw">
-        <label class="lbl">Smoking</label>
-        <div class="pill-row" id="row-smoke"></div>
-        <input type="text" id="in-smoke" placeholder="รายละเอียด (เช่น Quit 5 yrs หรือ 10 Cigs/day)" style="display:none;margin-top:4px"/>
-      </div>
-      <div class="iw">
-        <label class="lbl">Alcohol</label>
-        <div class="pill-row" id="row-alc"></div>
-        <input type="text" id="in-alc" placeholder="รายละเอียด (เช่น 2 drinks/week)" style="display:none;margin-top:4px"/>
-      </div>
-      <div class="iw">
-        <label class="lbl">Exercise</label>
-        <div class="pill-row" id="row-ex"></div>
-      </div>
-      <div class="iw">
-        <label class="lbl">Diet & Sleep</label>
-        <input type="text" id="in-diet" placeholder="ระบุการรับประทานอาหารและการนอนหลับ"/>
-      </div>
-      <div class="iw">
-        <label class="lbl">Current Medications / Supplements</label>
-        <input type="text" id="in-meds" placeholder="ยาและอาหารเสริมที่ทานประจำ"/>
-      </div>
-      <div class="iw">
-        <label class="lbl">Allergies</label>
-        <div class="pill-row" id="row-allergy"></div>
-        <input type="text" id="in-allergy" placeholder="ระบุชื่อยาที่แพ้" style="display:none;margin-top:4px"/>
-      </div>
+      <div class="iw"><label class="lbl">Smoking</label><div class="pill-row" id="row-smoke"></div><input type="text" id="in-smoke" placeholder="รายละเอียด" style="display:none;margin-top:4px"/></div>
+      <div class="iw"><label class="lbl">Alcohol</label><div class="pill-row" id="row-alc"></div><input type="text" id="in-alc" placeholder="รายละเอียด" style="display:none;margin-top:4px"/></div>
+      <div class="iw"><label class="lbl">Exercise</label><div class="pill-row" id="row-ex"></div></div>
+      <div class="iw"><label class="lbl">Diet & Sleep</label><input type="text" id="in-diet" placeholder="ระบุการรับประทานอาหารและการนอนหลับ"/></div>
+      <div class="iw"><label class="lbl">Current Medications / Supplements</label><input type="text" id="in-meds" placeholder="ยาและอาหารเสริมที่ทานประจำ"/></div>
+      <div class="iw"><label class="lbl">Allergies</label><div class="pill-row" id="row-allergy"></div><input type="text" id="in-allergy" placeholder="ระบุชื่อยาที่แพ้" style="display:none;margin-top:4px"/></div>
     </div>
 
-    <!-- 4. Investigation Results -->
     <div class="sec">
       <div class="sec-lbl">Investigation Results</div>
-      
-      <!-- CBC -->
-      <div class="iw">
-        <label class="lbl">CBC</label>
-        <div class="g4">
-          <input type="text" id="lab-hb" placeholder="Hb"/>
-          <input type="text" id="lab-wbc" placeholder="WBC"/>
-          <input type="text" id="lab-eos" placeholder="Eosinophil"/>
-          <input type="text" id="lab-plt" placeholder="Platelet"/>
-        </div>
-      </div>
-
-      <!-- FBS & Uric -->
-      <div class="g2">
-        <div class="iw">
-          <label class="lbl">Fasting Blood Sugar / HbA1c</label>
-          <input type="text" id="lab-fbs"/>
-        </div>
-        <div class="iw">
-          <label class="lbl">Uric Acid</label>
-          <input type="text" id="lab-uric"/>
-        </div>
-      </div>
-
-      <!-- Lipids -->
-      <div class="iw">
-        <label class="lbl">Lipid Profile</label>
-        <div class="g4">
-          <input type="text" id="lab-chol" placeholder="Chol"/>
-          <input type="text" id="lab-tg" placeholder="TG"/>
-          <input type="text" id="lab-hdl" placeholder="HDL"/>
-          <input type="text" id="lab-ldl" placeholder="LDL"/>
-        </div>
-      </div>
-
-      <!-- Renal & Liver Function -->
-      <div class="iw">
-        <label class="lbl">Renal Function (Kidney)</label>
-        <div class="g3">
-          <input type="text" id="lab-bun" placeholder="BUN"/>
-          <input type="text" id="lab-cr" placeholder="Cr"/>
-          <input type="text" id="lab-egfr" placeholder="eGFR"/>
-        </div>
-      </div>
-      
-      <div class="iw">
-        <label class="lbl">Liver Function</label>
-        <div class="g3">
-          <input type="text" id="lab-ast" placeholder="AST"/>
-          <input type="text" id="lab-alt" placeholder="ALT"/>
-          <input type="text" id="lab-alp" placeholder="ALP"/>
-        </div>
-      </div>
-
-      <!-- Urine Analysis -->
-      <div class="iw">
-        <label class="lbl">Urine Examination</label>
-        <div class="g4">
-          <input type="text" id="lab-upro" placeholder="Protein"/>
-          <input type="text" id="lab-uglu" placeholder="Glucose"/>
-          <input type="text" id="lab-uwbc" placeholder="WBC"/>
-          <input type="text" id="lab-urbc" placeholder="RBC"/>
-        </div>
-      </div>
-      
-      <!-- Imaging & Special Tests Selection -->
-      <div class="iw">
-        <label class="lbl">Imaging & Special Tests (เลือกหัวข้อที่จะกรอก)</label>
-        <div class="pill-row" id="row-img-sel"></div>
-        <div id="img-inputs-container"></div>
-      </div>
+      <div class="iw"><label class="lbl">CBC</label><div class="g4"><input type="text" id="lab-hb" placeholder="Hb"/><input type="text" id="lab-wbc" placeholder="WBC"/><input type="text" id="lab-eos" placeholder="Eosinophil"/><input type="text" id="lab-plt" placeholder="Platelet"/></div></div>
+      <div class="g2"><div class="iw"><label class="lbl">Fasting Blood Sugar / HbA1c</label><input type="text" id="lab-fbs"/></div><div class="iw"><label class="lbl">Uric Acid</label><input type="text" id="lab-uric"/></div></div>
+      <div class="iw"><label class="lbl">Lipid Profile</label><div class="g4"><input type="text" id="lab-chol" placeholder="Chol"/><input type="text" id="lab-tg" placeholder="TG"/><input type="text" id="lab-hdl" placeholder="HDL"/><input type="text" id="lab-ldl" placeholder="LDL"/></div></div>
+      <div class="iw"><label class="lbl">Renal Function (Kidney)</label><div class="g3"><input type="text" id="lab-bun" placeholder="BUN"/><input type="text" id="lab-cr" placeholder="Cr"/><input type="text" id="lab-egfr" placeholder="eGFR"/></div></div>
+      <div class="iw"><label class="lbl">Liver Function</label><div class="g3"><input type="text" id="lab-ast" placeholder="AST"/><input type="text" id="lab-alt" placeholder="ALT"/><input type="text" id="lab-alp" placeholder="ALP"/></div></div>
+      <div class="iw"><label class="lbl">Urine Examination</label><div class="g4"><input type="text" id="lab-upro" placeholder="Protein"/><input type="text" id="lab-uglu" placeholder="Glucose"/><input type="text" id="lab-uwbc" placeholder="WBC"/><input type="text" id="lab-urbc" placeholder="RBC"/></div></div>
+      <div class="iw"><label class="lbl">Imaging & Special Tests</label><div class="pill-row" id="row-img-sel"></div><div id="img-inputs-container"></div></div>
     </div>
 
-    <!-- 5. Assessment -->
     <div class="sec">
       <div class="sec-lbl">Assessment & Plan</div>
-      
-      <div class="iw">
-        <label class="lbl">Common Problems Presets (กดเพื่อเพิ่มลงใน Assessment)</label>
-        <div class="pill-row" id="row-as-presets"></div>
-      </div>
-
-      <!-- Sub-type Container (แสดงเมื่อเลือก Problem ที่มี Sub-type) -->
-      <div class="subtype-container" id="subtype-container">
-        <label class="lbl" id="subtype-lbl">Sub-classification:</label>
-        <div class="pill-row" id="row-subtypes"></div>
-      </div>
-
-      <div class="iw">
-        <label class="lbl">1. Overall Status</label>
-        <input type="text" id="as-overall" placeholder="e.g., Healthy adult"/>
-      </div>
-      <div class="iw">
-        <label class="lbl">2. New Findings (พิมพ์เพิ่มเติม)</label>
-        <div style="display:flex;gap:10px">
-          <button class="pill" id="btn-nf" onclick="toggleActive(this)">Select</button>
-          <input type="text" id="as-nf" placeholder="ระบุการค้นพบใหม่ที่ไม่มีใน preset..." style="flex:1"/>
-        </div>
-      </div>
-      <div class="iw">
-        <label class="lbl">3. Status of Existing PMH</label>
-        <div style="display:flex;gap:10px">
-          <button class="pill" id="btn-spmh" onclick="toggleActive(this)">Select</button>
-          <input type="text" id="as-spmh" placeholder="e.g., Well-controlled HTN" style="flex:1"/>
-        </div>
-      </div>
-      <div class="iw">
-        <label class="lbl">4. Risk Stratification</label>
-        <input type="text" id="as-risk" placeholder="e.g., High cardiovascular risk..."/>
-      </div>
+      <div class="iw"><label class="lbl">Common Problems Presets</label><div class="pill-row" id="row-as-presets"></div></div>
+      <div class="subtype-container" id="subtype-container"><label class="lbl" id="subtype-lbl">Sub-classification:</label><div class="pill-row" id="row-subtypes"></div></div>
+      <div class="iw"><label class="lbl">1. Overall Status</label><input type="text" id="as-overall" placeholder="e.g., Healthy adult"/></div>
+      <div class="iw"><label class="lbl">2. New Findings</label><div style="display:flex;gap:10px"><button class="pill" id="btn-nf" onclick="toggleActive(this)">Select</button><input type="text" id="as-nf" placeholder="ระบุการค้นพบใหม่..." style="flex:1"/></div></div>
+      <div class="iw"><label class="lbl">3. Status of Existing PMH</label><div style="display:flex;gap:10px"><button class="pill" id="btn-spmh" onclick="toggleActive(this)">Select</button><input type="text" id="as-spmh" placeholder="e.g., Well-controlled HTN" style="flex:1"/></div></div>
+      <div class="iw"><label class="lbl">4. Risk Stratification</label><input type="text" id="as-risk" placeholder="e.g., High cardiovascular risk..."/></div>
     </div>
 
-    <!-- 6. General Plan -->
     <div class="sec">
       <div class="sec-lbl">General Plan & Follow-up</div>
-      <div class="iw">
-        <label class="lbl">General Lifestyle Modification</label>
-        <div class="pill-row" id="row-life"></div>
-      </div>
-      <div class="iw">
-        <label class="lbl">Further Investigations</label>
-        <input type="text" id="pl-inv" placeholder="การตรวจเพิ่มเติม..."/>
-      </div>
-      <div class="iw">
-        <label class="lbl">Follow-up (F/U)</label>
-        <div style="margin-bottom:6px">
-          <button class="pill" id="btn-fu1" onclick="toggleActive(this)">Routine Annual Check-up next year</button>
-        </div>
-        <div style="display:flex;gap:10px">
-          <button class="pill" id="btn-fu2" onclick="toggleActive(this)">F/U for abnormal results in:</button>
-          <input type="text" id="pl-fu" placeholder="___ Weeks/Months" style="flex:1"/>
-        </div>
-      </div>
+      <div class="iw"><label class="lbl">General Lifestyle Modification</label><div class="pill-row" id="row-life"></div></div>
+      <div class="iw"><label class="lbl">Further Investigations</label><input type="text" id="pl-inv" placeholder="การตรวจเพิ่มเติม..."/></div>
+      <div class="iw"><label class="lbl">Follow-up (F/U)</label><div style="margin-bottom:6px"><button class="pill" id="btn-fu1" onclick="toggleActive(this)">Routine Annual Check-up next year</button></div><div style="display:flex;gap:10px"><button class="pill" id="btn-fu2" onclick="toggleActive(this)">F/U for abnormal results in:</button><input type="text" id="pl-fu" placeholder="___ Weeks/Months" style="flex:1"/></div></div>
     </div>
 
     <button class="gen-btn" type="button" onclick="generateOutput()">Generate Record</button>
@@ -289,15 +206,34 @@ input[type=text]:focus,textarea:focus{
 
   <!-- OUTPUT VIEW -->
   <div id="view-output" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.12em;text-transform:uppercase">Medical Record Output</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.12em;text-transform:uppercase">Output</span>
     </div>
-    <div class="out-panel active" id="out-panel">
-      <pre class="out-pre" id="out-text"></pre>
-      <div class="out-actions">
-        <button class="copy-btn" onclick="copyOutput(this)">COPY TEXT</button>
-        <button class="back-btn" onclick="showForm()">← แก้ไขข้อมูล</button>
-        <button class="new-btn" style="margin-left:auto" onclick="location.reload()">+ CLEAR FORM</button>
+    
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tab-medical" onclick="switchTab('medical')">Medical Record</button>
+      <button class="tab-btn patient-tab" id="tab-patient" onclick="switchTab('patient')">คำแนะนำผู้ป่วย</button>
+    </div>
+
+    <div class="tab-content active" id="content-medical">
+      <div class="out-panel active">
+        <pre class="out-pre" id="out-text"></pre>
+        <div class="out-actions">
+          <button class="copy-btn" onclick="copyOutput(this, 'out-text')">COPY TEXT</button>
+          <button class="back-btn" onclick="showForm()">← แก้ไขข้อมูล</button>
+          <button class="new-btn" style="margin-left:auto" onclick="location.reload()">+ CLEAR FORM</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="content-patient">
+      <div class="out-panel active">
+        <div id="patient-advice-content"></div>
+        <div class="out-actions">
+          <button class="copy-btn" onclick="copyPatientAdvice()">COPY ADVICE</button>
+          <button class="back-btn" onclick="showForm()">← แก้ไขข้อมูล</button>
+          <button class="new-btn" style="margin-left:auto" onclick="location.reload()">+ CLEAR FORM</button>
+        </div>
       </div>
     </div>
   </div>
@@ -306,45 +242,26 @@ input[type=text]:focus,textarea:focus{
 <script>
 document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('th-TH', {year:'numeric',month:'short',day:'numeric'});
 
-// ==================== SUBTYPE CONFIGURATION ====================
-// กำหนดว่าปัญหาไหนมี Sub-type อะไรบ้าง
 const SUBTYPE_OPTIONS = {
   'Fatty Liver (NAFLD / MASLD)': [
-    {val:'mild', label:'Mild'},
-    {val:'moderate', label:'Moderate'},
-    {val:'severe', label:'Severe'}
+    {val:'mild', label:'Mild'},{val:'moderate', label:'Moderate'},{val:'severe', label:'Severe'}
   ],
   'Anemia': [
-    {val:'normocytic', label:'Normochromic Normocytic'},
-    {val:'microcytic', label:'Hypochromic Microcytic'},
-    {val:'macrocytic', label:'Macrocytic'}
+    {val:'normocytic', label:'Normochromic Normocytic'},{val:'microcytic', label:'Hypochromic Microcytic'},{val:'macrocytic', label:'Macrocytic'}
   ]
 };
 
-// State management variables
 let state = {
-  pmh: 'none',
-  fh: { dm: false, htn: false, cad: false, cancer: false, other: false },
-  smoke: 'never',
-  alc: 'none',
-  ex: 'none',
-  allergy: 'none',
-  life: { diet: false, ex: false, weight: false },
-  img: {},
-  assessPresets: new Set(),
-  // Sub-type state: เก็บ key = problem name, value = subtype value หรือ 'none'
-  assessSubtypes: {}
+  pmh: 'none', fh: { dm: false, htn: false, cad: false, cancer: false, other: false },
+  smoke: 'never', alc: 'none', ex: 'none', allergy: 'none',
+  life: { diet: false, ex: false, weight: false }, img: {},
+  assessPresets: new Set(), assessSubtypes: {}
 };
 
 const IMG_LIST = ['CXR', 'US abdomen', 'MMG', 'CT Calcium score', 'BMD', 'ABI', 'EKG', 'EST', 'Fibroscan'];
 IMG_LIST.forEach(k => state.img[k] = false);
+Object.keys(SUBTYPE_OPTIONS).forEach(key => { state.assessSubtypes[key] = 'none'; });
 
-// เริ่มต้น Sub-type state
-Object.keys(SUBTYPE_OPTIONS).forEach(key => {
-  state.assessSubtypes[key] = 'none';
-});
-
-// แยก Obesity, Overweight, Metabolic Syndrome ออกจากกัน
 const ASSESS_PRESETS = [
   'Dyslipidemia (LDL สูง)', 'Hypertriglyceridemia', 'IFG', 'DM', 
   'Hyperuricemia / Gout', 'Obesity', 'Overweight', 'Metabolic Syndrome', 
@@ -352,18 +269,21 @@ const ASSESS_PRESETS = [
   'Proteinuria', 'Asymptomatic Bacteriuria', 'Anemia', 'Eosinophilia', 'Leukopenia', 'Abnormal ECG'
 ];
 
-// Toggle general active class
+// เก็บ patientAdviceItems ไว้ใน scope นอกเพื่อให้ copy ได้
+let currentPatientAdviceItems = [];
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('tab-' + tabName).classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('content-' + tabName).classList.add('active');
+}
+
 function toggleActive(btn) { btn.classList.toggle('sel'); }
 
-// ==================== SUBTYPE RENDERING ====================
 function getActiveSubtypeProblems() {
-  // หาว่าใน assessPresets มีปัญหาที่มี Sub-type อะไรบ้าง
   const active = [];
-  state.assessPresets.forEach(p => {
-    if (SUBTYPE_OPTIONS[p]) {
-      active.push(p);
-    }
-  });
+  state.assessPresets.forEach(p => { if (SUBTYPE_OPTIONS[p]) active.push(p); });
   return active;
 }
 
@@ -371,562 +291,362 @@ function renderSubtypes() {
   const container = document.getElementById('subtype-container');
   const lbl = document.getElementById('subtype-lbl');
   const row = document.getElementById('row-subtypes');
-  
   const activeProblems = getActiveSubtypeProblems();
-  
-  if (activeProblems.length === 0) {
-    container.style.display = 'none';
-    return;
-  }
-  
-  // เคลียร์ row
+  if (activeProblems.length === 0) { container.style.display = 'none'; return; }
   row.innerHTML = '';
-  
-  // ถ้ามีปัญหาเดียว ให้แสดงเฉพาะ subtype ของปัญหานั้น
   if (activeProblems.length === 1) {
     const problemKey = activeProblems[0];
     const options = SUBTYPE_OPTIONS[problemKey];
     container.style.display = 'block';
     lbl.textContent = `Sub-classification for ${problemKey}:`;
-    
-    // None option
-    const noneBtn = document.createElement('button');
-    noneBtn.type = 'button';
-    noneBtn.className = 'pill' + (state.assessSubtypes[problemKey] === 'none' ? ' sub-sel' : '');
-    noneBtn.textContent = 'Not specified';
-    noneBtn.onclick = () => {
-      state.assessSubtypes[problemKey] = 'none';
-      renderSubtypes();
-    };
-    row.appendChild(noneBtn);
-    
-    // Sub-type options
+    const noneBtn = document.createElement('button'); noneBtn.type = 'button'; noneBtn.className = 'pill' + (state.assessSubtypes[problemKey] === 'none' ? ' sub-sel' : ''); noneBtn.textContent = 'Not specified'; noneBtn.onclick = () => { state.assessSubtypes[problemKey] = 'none'; renderSubtypes(); }; row.appendChild(noneBtn);
     options.forEach(opt => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'pill' + (state.assessSubtypes[problemKey] === opt.val ? ' sub-sel' : '');
-      btn.textContent = opt.label;
-      btn.onclick = () => {
-        state.assessSubtypes[problemKey] = opt.val;
-        renderSubtypes();
-      };
-      row.appendChild(btn);
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pill' + (state.assessSubtypes[problemKey] === opt.val ? ' sub-sel' : ''); btn.textContent = opt.label; btn.onclick = () => { state.assessSubtypes[problemKey] = opt.val; renderSubtypes(); }; row.appendChild(btn);
     });
-  } 
-  // ถ้ามีหลายปัญหา แสดงแยกตามปัญหา
-  else {
-    container.style.display = 'block';
-    lbl.textContent = 'Sub-classification:';
-    
+  } else {
+    container.style.display = 'block'; lbl.textContent = 'Sub-classification:';
     activeProblems.forEach(problemKey => {
       const options = SUBTYPE_OPTIONS[problemKey];
-      
-      // หัวข้อปัญหา
-      const problemLabel = document.createElement('div');
-      problemLabel.style.cssText = 'font-size:10px;color:var(--text2);margin:8px 0 4px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;width:100%';
-      problemLabel.textContent = problemKey + ':';
-      row.appendChild(problemLabel);
-      
-      // Wrapper สำหรับปุ่มของปัญหานี้
-      const btnGroup = document.createElement('div');
-      btnGroup.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-bottom:4px';
-      
-      // None option
-      const noneBtn = document.createElement('button');
-      noneBtn.type = 'button';
-      noneBtn.className = 'pill' + (state.assessSubtypes[problemKey] === 'none' ? ' sub-sel' : '');
-      noneBtn.textContent = 'Not specified';
-      noneBtn.onclick = () => {
-        state.assessSubtypes[problemKey] = 'none';
-        renderSubtypes();
-      };
-      btnGroup.appendChild(noneBtn);
-      
-      // Sub-type options
+      const problemLabel = document.createElement('div'); problemLabel.style.cssText = 'font-size:10px;color:var(--text2);margin:8px 0 4px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;width:100%'; problemLabel.textContent = problemKey + ':'; row.appendChild(problemLabel);
+      const btnGroup = document.createElement('div'); btnGroup.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-bottom:4px';
+      const noneBtn = document.createElement('button'); noneBtn.type = 'button'; noneBtn.className = 'pill' + (state.assessSubtypes[problemKey] === 'none' ? ' sub-sel' : ''); noneBtn.textContent = 'Not specified'; noneBtn.onclick = () => { state.assessSubtypes[problemKey] = 'none'; renderSubtypes(); }; btnGroup.appendChild(noneBtn);
       options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'pill' + (state.assessSubtypes[problemKey] === opt.val ? ' sub-sel' : '');
-        btn.textContent = opt.label;
-        btn.onclick = () => {
-          state.assessSubtypes[problemKey] = opt.val;
-          renderSubtypes();
-        };
-        btnGroup.appendChild(btn);
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pill' + (state.assessSubtypes[problemKey] === opt.val ? ' sub-sel' : ''); btn.textContent = opt.label; btn.onclick = () => { state.assessSubtypes[problemKey] = opt.val; renderSubtypes(); }; btnGroup.appendChild(btn);
       });
-      
       row.appendChild(btnGroup);
     });
   }
 }
 
-// UI Builders
 function renderRadioGroup(containerId, options, activeVal, callback) {
-  const c = document.getElementById(containerId);
-  c.innerHTML = '';
-  options.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'pill' + (activeVal === opt.val ? ' sel' : '');
-    btn.textContent = opt.label;
-    btn.onclick = () => callback(opt.val);
-    c.appendChild(btn);
-  });
+  const c = document.getElementById(containerId); c.innerHTML = '';
+  options.forEach(opt => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pill' + (activeVal === opt.val ? ' sel' : ''); btn.textContent = opt.label; btn.onclick = () => callback(opt.val); c.appendChild(btn); });
 }
-
 function renderCheckboxGroup(containerId, options, stateObj, callback) {
-  const c = document.getElementById(containerId);
-  c.innerHTML = '';
-  options.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'pill' + (stateObj[opt.val] ? ' sel' : '');
-    btn.textContent = opt.label;
-    btn.onclick = () => {
-      stateObj[opt.val] = !stateObj[opt.val];
-      callback();
-    };
-    c.appendChild(btn);
-  });
+  const c = document.getElementById(containerId); c.innerHTML = '';
+  options.forEach(opt => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pill' + (stateObj[opt.val] ? ' sel' : ''); btn.textContent = opt.label; btn.onclick = () => { stateObj[opt.val] = !stateObj[opt.val]; callback(); }; c.appendChild(btn); });
 }
 
 const updateAssessPresets = () => {
-  const c = document.getElementById('row-as-presets');
-  c.innerHTML = '';
+  const c = document.getElementById('row-as-presets'); c.innerHTML = '';
   ASSESS_PRESETS.forEach(p => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'pill' + (state.assessPresets.has(p) ? ' sel' : '');
-    btn.textContent = p;
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pill' + (state.assessPresets.has(p) ? ' sel' : ''); btn.textContent = p;
     btn.onclick = () => {
-      if(state.assessPresets.has(p)) {
-        state.assessPresets.delete(p);
-        // รีเซ็ต subtype เมื่อ unselect problem
-        if (SUBTYPE_OPTIONS[p]) {
-          state.assessSubtypes[p] = 'none';
-        }
-      } else {
-        state.assessPresets.add(p);
-      }
-      updateAssessPresets();
-      renderSubtypes(); // อัปเดต subtype UI
-    };
-    c.appendChild(btn);
+      if(state.assessPresets.has(p)) { state.assessPresets.delete(p); if (SUBTYPE_OPTIONS[p]) state.assessSubtypes[p] = 'none'; }
+      else state.assessPresets.add(p);
+      updateAssessPresets(); renderSubtypes();
+    }; c.appendChild(btn);
   });
 };
 
-// PMH
-const updatePMH = (val) => {
-  state.pmh = val;
-  document.getElementById('in-pmh').style.display = val === 'known' ? 'block' : 'none';
-  renderRadioGroup('row-pmh', [{val:'none', label:'No underlying disease'}, {val:'known', label:'Known cases of...'}], state.pmh, updatePMH);
-};
+const updatePMH = (val) => { state.pmh = val; document.getElementById('in-pmh').style.display = val === 'known' ? 'block' : 'none'; renderRadioGroup('row-pmh', [{val:'none', label:'No underlying disease'}, {val:'known', label:'Known cases of...'}], state.pmh, updatePMH); };
+const updateFH = () => { document.getElementById('in-fh-cancer').style.display = state.fh.cancer ? 'block' : 'none'; document.getElementById('in-fh-other').style.display = state.fh.other ? 'block' : 'none'; renderCheckboxGroup('row-fh', [{val:'dm', label:'DM'}, {val:'htn', label:'HTN'}, {val:'cad', label:'CAD/Stroke'}, {val:'cancer', label:'Cancer'}, {val:'other', label:'Others'}], state.fh, updateFH); };
+const updateSmoke = (val) => { state.smoke = val; document.getElementById('in-smoke').style.display = (val === 'ex' || val === 'current') ? 'block' : 'none'; renderRadioGroup('row-smoke', [{val:'never', label:'Never'}, {val:'ex', label:'Ex-smoker'}, {val:'current', label:'Current'}], state.smoke, updateSmoke); };
+const updateAlc = (val) => { state.alc = val; document.getElementById('in-alc').style.display = val === 'freq' ? 'block' : 'none'; renderRadioGroup('row-alc', [{val:'none', label:'None'}, {val:'occ', label:'Occasional'}, {val:'freq', label:'Frequent'}], state.alc, updateAlc); };
+const updateEx = (val) => { state.ex = val; renderRadioGroup('row-ex', [{val:'none', label:'None'}, {val:'<150', label:'<150 min/wk'}, {val:'>=150', label:'≥150 min/wk (Moderate-Vigorous)'}], state.ex, updateEx); };
+const updateAllergy = (val) => { state.allergy = val; document.getElementById('in-allergy').style.display = val === 'yes' ? 'block' : 'none'; renderRadioGroup('row-allergy', [{val:'none', label:'NKDA (No Known Drug Allergies)'}, {val:'yes', label:'Yes...'}], state.allergy, updateAllergy); };
+const updateLife = () => { renderCheckboxGroup('row-life', [{val:'diet', label:'Diet (e.g., Low salt, Low fat, Diabetic diet)'}, {val:'ex', label:'Exercise (Recommend ≥150 min/wk aerobic + resistance)'}, {val:'weight', label:'Weight management / Stop smoking or alcohol'}], state.life, updateLife); };
 
-// FH
-const updateFH = () => {
-  document.getElementById('in-fh-cancer').style.display = state.fh.cancer ? 'block' : 'none';
-  document.getElementById('in-fh-other').style.display = state.fh.other ? 'block' : 'none';
-  renderCheckboxGroup('row-fh', [
-    {val:'dm', label:'DM'}, {val:'htn', label:'HTN'}, {val:'cad', label:'CAD/Stroke'}, 
-    {val:'cancer', label:'Cancer'}, {val:'other', label:'Others'}
-  ], state.fh, updateFH);
-};
-
-// Smoke
-const updateSmoke = (val) => {
-  state.smoke = val;
-  document.getElementById('in-smoke').style.display = (val === 'ex' || val === 'current') ? 'block' : 'none';
-  renderRadioGroup('row-smoke', [{val:'never', label:'Never'}, {val:'ex', label:'Ex-smoker'}, {val:'current', label:'Current'}], state.smoke, updateSmoke);
-};
-
-// Alcohol
-const updateAlc = (val) => {
-  state.alc = val;
-  document.getElementById('in-alc').style.display = val === 'freq' ? 'block' : 'none';
-  renderRadioGroup('row-alc', [{val:'none', label:'None'}, {val:'occ', label:'Occasional'}, {val:'freq', label:'Frequent'}], state.alc, updateAlc);
-};
-
-// Exercise
-const updateEx = (val) => {
-  state.ex = val;
-  renderRadioGroup('row-ex', [{val:'none', label:'None'}, {val:'<150', label:'<150 min/wk'}, {val:'>=150', label:'≥150 min/wk (Moderate-Vigorous)'}], state.ex, updateEx);
-};
-
-// Allergy
-const updateAllergy = (val) => {
-  state.allergy = val;
-  document.getElementById('in-allergy').style.display = val === 'yes' ? 'block' : 'none';
-  renderRadioGroup('row-allergy', [{val:'none', label:'NKDA (No Known Drug Allergies)'}, {val:'yes', label:'Yes...'}], state.allergy, updateAllergy);
-};
-
-// Lifestyle
-const updateLife = () => {
-  renderCheckboxGroup('row-life', [
-    {val:'diet', label:'Diet (e.g., Low salt, Low fat, Diabetic diet)'}, 
-    {val:'ex', label:'Exercise (Recommend ≥150 min/wk aerobic + resistance)'}, 
-    {val:'weight', label:'Weight management / Stop smoking or alcohol'}
-  ], state.life, updateLife);
-};
-
-// Imaging Setup
 const initImaging = () => {
   const cont = document.getElementById('img-inputs-container');
-  IMG_LIST.forEach(k => {
-    const safeK = k.replace(/\s+/g, '');
-    const div = document.createElement('div');
-    div.className = 'iw';
-    div.id = 'img-div-' + safeK;
-    div.style.display = 'none';
-    div.style.marginBottom = '6px';
-    div.innerHTML = `<label class="lbl">${k}</label><input type="text" id="img-in-${safeK}" placeholder="ผลตรวจ ${k}..."/>`;
-    cont.appendChild(div);
-  });
+  IMG_LIST.forEach(k => { const safeK = k.replace(/\s+/g, ''); const div = document.createElement('div'); div.className = 'iw'; div.id = 'img-div-' + safeK; div.style.display = 'none'; div.style.marginBottom = '6px'; div.innerHTML = `<label class="lbl">${k}</label><input type="text" id="img-in-${safeK}" placeholder="ผลตรวจ ${k}..."/>`; cont.appendChild(div); });
 };
-
 const updateImgSel = () => {
-  const c = document.getElementById('row-img-sel');
-  c.innerHTML = '';
+  const c = document.getElementById('row-img-sel'); c.innerHTML = '';
   IMG_LIST.forEach(k => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'pill' + (state.img[k] ? ' sel' : '');
-    btn.textContent = k;
-    btn.onclick = () => {
-      state.img[k] = !state.img[k];
-      const safeK = k.replace(/\s+/g, '');
-      const div = document.getElementById('img-div-' + safeK);
-      if(div) div.style.display = state.img[k] ? 'block' : 'none';
-      if(!state.img[k]) document.getElementById('img-in-'+safeK).value = '';
-      updateImgSel();
-    };
-    c.appendChild(btn);
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pill' + (state.img[k] ? ' sel' : ''); btn.textContent = k;
+    btn.onclick = () => { state.img[k] = !state.img[k]; const safeK = k.replace(/\s+/g, ''); const div = document.getElementById('img-div-' + safeK); if(div) div.style.display = state.img[k] ? 'block' : 'none'; if(!state.img[k]) document.getElementById('img-in-'+safeK).value = ''; updateImgSel(); }; c.appendChild(btn);
   });
 };
 
-// Helper: หา label จาก subtype value
 function getSubtypeLabel(problemKey, subtypeVal) {
   if (!SUBTYPE_OPTIONS[problemKey] || subtypeVal === 'none') return '';
   const opt = SUBTYPE_OPTIONS[problemKey].find(o => o.val === subtypeVal);
   return opt ? ` (${opt.label})` : '';
 }
 
-
-function generateOutput() {
-  const getVal = (id) => document.getElementById(id).value.trim();
-  const getSel = (id) => document.getElementById(id).classList.contains('sel');
-
-  let text = '';
-
-  // 1. CC
-  const cc = getVal('in-cc') || 'มาตรวจสุขภาพประจำปี / ไม่มีอาการผิดปกติ (Asymptomatic)';
-  text += `Chief Complaint (CC): ${cc}\n`;
-
-  // 2. PMH
-  text += `Past Medical History: `;
-  if (state.pmh === 'none') {
-    text += `No underlying disease\n`;
-  } else if (state.pmh === 'known') {
-    text += `Known cases of: ${getVal('in-pmh') || '-'}\n`;
-  } else {
-    text += `\n`;
-  }
-  
-  text += '\n';
-
-  // 3. FH 
-  const fhArr = [];
-  if (state.fh.dm) fhArr.push('DM');
-  if (state.fh.htn) fhArr.push('HTN');
-  if (state.fh.cad) fhArr.push('CAD/Stroke');
-  if (state.fh.cancer) fhArr.push(`Cancer (${getVal('in-fh-cancer') || '-'})`);
-  if (state.fh.other) fhArr.push(`Others: ${getVal('in-fh-other') || '-'}`);
-  
-  text += `Family History (FH): ${fhArr.length > 0 ? fhArr.join(', ') : 'Denied'}\n\n`;
-
-  // 4. SH
-  text += `Social & Lifestyle History (SH):\n`;
-  text += `Smoking: `;
-  if (state.smoke === 'never') text += 'Never\n';
-  else if (state.smoke === 'ex') text += `Ex-smoker (Quit ${getVal('in-smoke') || '___ yrs'})\n`;
-  else if (state.smoke === 'current') text += `Current (${getVal('in-smoke') || '___ Cigs/day'})\n`;
-  
-  text += `Alcohol: `;
-  if (state.alc === 'none') text += 'None\n';
-  else if (state.alc === 'occ') text += 'Occasional\n';
-  else if (state.alc === 'freq') text += `Frequent (${getVal('in-alc') || '___ drinks/week'})\n`;
-  
-  text += `Exercise: `;
-  if (state.ex === 'none') text += 'None\n';
-  else if (state.ex === '<150') text += '<150 min/wk\n';
-  else if (state.ex === '>=150') text += '≥150 min/wk (Moderate-Vigorous)\n';
-
-  // Hide empty fields
-  const diet = getVal('in-diet');
-  if (diet) text += `Diet & Sleep: ${diet}\n`;
-  
-  const meds = getVal('in-meds');
-  if (meds) text += `Current Medications / Supplements: ${meds}\n`;
-
-  text += `Allergies: `;
-  if (state.allergy === 'none') text += 'NKDA (No Known Drug Allergies)\n';
-  else if (state.allergy === 'yes') text += `Yes: ${getVal('in-allergy') || '-'}\n`;
-  
-  text += '\n';
-
-  // --- Assessment Set Initialization ---
-  let asSet = new Set(state.assessPresets);
-
-  // Check FBS / HbA1c
-  const fbsStr = getVal('lab-fbs');
-  if(fbsStr) {
-      const nums = fbsStr.match(/\d+(\.\d+)?/g);
-      if (nums) {
-          let isDM = false, isIFG = false;
-          nums.forEach(nStr => {
-              const n = parseFloat(nStr);
-              if (n >= 126 || n >= 6.5) isDM = true;
-              else if ((n >= 100 && n < 126) || (n >= 5.7 && n < 6.5)) isIFG = true;
-          });
-          if (isDM) asSet.add('DM');
-          else if (isIFG) asSet.add('IFG');
-      }
-  }
-
-  // Check Lipids
-  const ldlStr = getVal('lab-ldl');
-  const cholStr = getVal('lab-chol');
-  const tgStr = getVal('lab-tg');
-  if (ldlStr.match(/\d+/) && parseFloat(ldlStr.match(/\d+/)[0]) >= 130) asSet.add('Dyslipidemia (LDL สูง)');
-  if (cholStr.match(/\d+/) && parseFloat(cholStr.match(/\d+/)[0]) >= 200) asSet.add('Dyslipidemia (LDL สูง)');
-  if (tgStr.match(/\d+/) && parseFloat(tgStr.match(/\d+/)[0]) >= 150) asSet.add('Hypertriglyceridemia');
-  
-  // 5. Investigations (Show only if filled)
-  let invLines = [];
-  
-  let cbcArr = [];
-  if(getVal('lab-hb')) cbcArr.push(`Hb: ${getVal('lab-hb')}`);
-  if(getVal('lab-wbc')) cbcArr.push(`WBC: ${getVal('lab-wbc')}`);
-  if(getVal('lab-eos')) cbcArr.push(`Eosinophil: ${getVal('lab-eos')}`);
-  if(getVal('lab-plt')) cbcArr.push(`Platelet: ${getVal('lab-plt')}`);
-  if (cbcArr.length > 0) invLines.push(`CBC: ${cbcArr.join(', ')}`);
-
-  if (fbsStr) invLines.push(`Fasting Blood Sugar / HbA1c: ${fbsStr}`);
-  const uricStr = getVal('lab-uric'); if(uricStr) invLines.push(`Uric Acid: ${uricStr}`);
-  
-  let lipidArr = [];
-  if (cholStr) lipidArr.push(`Chol: ${cholStr}`);
-  if (tgStr) lipidArr.push(`TG: ${tgStr}`);
-  const hdlStr = getVal('lab-hdl'); if (hdlStr) lipidArr.push(`HDL: ${hdlStr}`);
-  if (ldlStr) lipidArr.push(`LDL: ${ldlStr}`);
-  if (lipidArr.length > 0) invLines.push(`Lipid Profile: ${lipidArr.join(' / ')}`);
-  
-  let renalArr = [];
-  if(getVal('lab-bun')) renalArr.push(`BUN: ${getVal('lab-bun')}`);
-  if(getVal('lab-cr')) renalArr.push(`Cr: ${getVal('lab-cr')}`);
-  if(getVal('lab-egfr')) renalArr.push(`eGFR: ${getVal('lab-egfr')}`);
-  if (renalArr.length > 0) invLines.push(`Renal Function: ${renalArr.join(', ')}`);
-
-  let liverArr = [];
-  if(getVal('lab-ast')) liverArr.push(`AST: ${getVal('lab-ast')}`);
-  if(getVal('lab-alt')) liverArr.push(`ALT: ${getVal('lab-alt')}`);
-  if(getVal('lab-alp')) liverArr.push(`ALP: ${getVal('lab-alp')}`);
-  if (liverArr.length > 0) invLines.push(`Liver Function: ${liverArr.join(', ')}`);
-
-  let uaArr = [];
-  if(getVal('lab-upro')) uaArr.push(`Protein: ${getVal('lab-upro')}`);
-  if(getVal('lab-uglu')) uaArr.push(`Glucose: ${getVal('lab-uglu')}`);
-  if(getVal('lab-uwbc')) uaArr.push(`WBC: ${getVal('lab-uwbc')}`);
-  if(getVal('lab-urbc')) uaArr.push(`RBC: ${getVal('lab-urbc')}`);
-  if (uaArr.length > 0) invLines.push(`Urine Examination: ${uaArr.join(', ')}`);
-
-  // Imaging processing
-  IMG_LIST.forEach(k => {
-      if(state.img[k]) {
-          const val = getVal('img-in-' + k.replace(/\s+/g, ''));
-          if (val) invLines.push(`${k}: ${val}`);
-      }
-  });
-
-  if (invLines.length > 0) {
-    text += `Investigation Results\n`;
-    text += invLines.join('\n') + '\n\n';
-  }
-
-  // 6. Assessment and Plan combined
-  let assessPlanList = [];
-  
-  const overall = getVal('as-overall'); 
-  if (overall) assessPlanList.push({ title: `Overall Status: ${overall}`, plans: [] });
-  
-  const nf = getVal('as-nf'); 
-  if (getSel('btn-nf') && nf) assessPlanList.push({ title: `New Findings: ${nf}`, plans: [] });
-  
-  const spmh = getVal('as-spmh'); 
-  if (getSel('btn-spmh') && spmh) assessPlanList.push({ title: `Status of Existing PMH: ${spmh}`, plans: [] });
-  
-  const risk = getVal('as-risk'); 
-  if (risk) assessPlanList.push({ title: `Risk Stratification: ${risk}`, plans: [] });
-  
-  // Checking conditionals
-  const drinksAlc = (state.alc === 'occ' || state.alc === 'freq');
+// ==================== BUILD PATIENT ADVICE (แยก Assessment กับ คำแนะนำ) ====================
+function buildPatientAdvice(asSet, drinksAlc) {
+  currentPatientAdviceItems = [];
+  const assessmentItems = [];
+  const adviceItems = [];
+  const addedAdviceTitles = new Set(); // กันคำแนะนำซ้ำ
 
   asSet.forEach(a => {
-      let pLines = [];
-      let displayTitle = a; // หัวข้อที่จะแสดง (อาจรวม subtype)
-      
-      if (a === 'DM') {
-          pLines.push('- แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ');
-      } else if (a === 'IFG') {
-          pLines.push('- Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.');
-          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
-      } else if (a === 'Dyslipidemia (LDL สูง)') {
-          pLines.push('- Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.');
-          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
-      } else if (a === 'Hypertriglyceridemia') {
-          pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.');
-          pLines.push('- Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.');
-          if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.');
-      } else if (a === 'Hyperuricemia / Gout') {
-          pLines.push(`- Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages${drinksAlc ? ', and alcohol (especially beer and spirits)' : ''}. Encourage low-fat dairy products and vegetable consumption.`);
-          pLines.push('- Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.');
-      } 
-      // Logic สำหรับ Obesity, Overweight, Metabolic Syndrome
-      else if (a === 'Obesity') {
-          pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.');
-          pLines.push('- Caloric deficit of 500–750 kcal/day.');
-          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
-          pLines.push('- Consider anti-obesity pharmacotherapy if indicated (e.g., BMI ≥30 or ≥27 with comorbidities).');
-      } else if (a === 'Overweight') {
-          pLines.push('- Weight Loss Targets: Aim for 5–10% of total body weight reduction over 6 months if comorbidities are present.');
-          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
-          pLines.push('- Caloric deficit of 500–750 kcal/day.');
-      } else if (a === 'Metabolic Syndrome') {
-          pLines.push('- Comprehensive lifestyle intervention to address all components of metabolic syndrome.');
-          pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.');
-          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.');
-          pLines.push('- Monitor and manage individual components: hyperglycemia, dyslipidemia, and hypertension.');
-      } else if (a === 'Elevated Liver Enzymes') {
-          pLines.push(`- Investigate etiology: ${drinksAlc ? 'alcohol use, ' : ''}viral hepatitis, medications, fatty liver.`);
-          pLines.push(`- Avoid hepatotoxic medications${drinksAlc ? ' and alcohol' : ''}.`);
-          pLines.push('- Repeat LFT in 4-8 weeks.');
-          pLines.push('- Refer if persistently elevated or >3x ULN.');
-      } 
-      // ==================== FATTY LIVER WITH SUBTYPE ====================
-      else if (a === 'Fatty Liver (NAFLD / MASLD)') {
-          const subtype = state.assessSubtypes['Fatty Liver (NAFLD / MASLD)'] || 'none';
-          
-          // เพิ่ม subtype ในหัวข้อ
-          displayTitle = 'Fatty Liver (NAFLD / MASLD)' + getSubtypeLabel('Fatty Liver (NAFLD / MASLD)', subtype);
-          
-          pLines.push('- Diet: Recommend hypocaloric diet (500–1000 kcal deficit/day) / Mediterranean diet (high in mono- and polyunsaturated fats, vegetables, legumes, fish; low in refined carbohydrates, fructose, and red/processed meats). Avoid sugar-sweetened beverages and high-fructose corn syrup.');
-          pLines.push('- Weight reduction ≥10% of body weight.');
-          pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity + resistance training.');
-          if (drinksAlc) pLines.push('- Alcohol abstinence.');
-          
-          // Plan ต่างกันตาม severity
-          if (subtype === 'severe') {
-            pLines.push('- Refer to Gastroenterologist/Hepatologist for further evaluation.');
-            pLines.push('- Consider Fibroscan or liver biopsy to assess fibrosis stage.');
-            pLines.push('- Repeat LFT and Ultrasound liver in 3-6 months.');
-          } else if (subtype === 'moderate') {
-            pLines.push('- Repeat LFT and Ultrasound liver in 6 months.');
-          } else {
-            // mild หรือไม่ระบุ
-            pLines.push('- Follow-up Ultrasound liver in 6-12 months.');
-          }
-      }
-      // ==================== ANEMIA WITH SUBTYPE ====================
-      else if (a === 'Anemia') {
-          const subtype = state.assessSubtypes['Anemia'] || 'none';
-          
-          // เพิ่ม subtype ในหัวข้อ
-          displayTitle = 'Anemia' + getSubtypeLabel('Anemia', subtype);
-          
-          // Plan พื้นฐาน
-          pLines.push('- Evaluate for underlying causes: nutritional deficiency, chronic disease, blood loss, hemolysis, bone marrow disorders.');
-          
-          // Plan ต่างกันตามชนิดของ anemia
-          if (subtype === 'microcytic') {
-            pLines.push('- Likely Iron Deficiency Anemia: Check serum ferritin, serum iron, TIBC.');
-            pLines.push('- Investigate source of blood loss (GI endoscopy/colonoscopy if indicated, especially in men and postmenopausal women).');
-            pLines.push('- Consider trial of oral iron supplementation (e.g., ferrous sulfate 325 mg daily) with follow-up CBC in 4-8 weeks.');
-            pLines.push('- If thalassemia suspected (based on ethnicity/family history), check hemoglobin electrophoresis.');
-          } else if (subtype === 'normocytic') {
-            pLines.push('- Consider Anemia of Chronic Disease, early iron deficiency, chronic kidney disease, or mixed etiology.');
-            pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, BUN/Cr.');
-            pLines.push('- If no obvious cause, consider referral to hematologist for further evaluation.');
-          } else if (subtype === 'macrocytic') {
-            pLines.push('- Check vitamin B12 and folate levels.');
-            pLines.push('- Evaluate for alcohol use, liver disease, hypothyroidism, or medication-induced causes.');
-            pLines.push('- If B12/folate deficiency confirmed, initiate replacement therapy and monitor response.');
-          } else {
-            // ไม่ระบุ subtype
-            pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, vitamin B12, and folate levels.');
-            pLines.push('- Further workup guided by MCV and clinical context.');
-          }
-      }
-      // Plan สำหรับ Microscopic Hematuria
-      else if (a === 'Microscopic Hematuria') {
-          pLines.push('- Repeat UA in 48–72 hours after resolving benign transient causes.');
-          pLines.push('- Refer urologist if UA still shows microscopic hematuria.');
-      }
-      // Plan สำหรับ Asymptomatic Bacteriuria
-      else if (a === 'Asymptomatic Bacteriuria') {
-          pLines.push('- Healthy, non-pregnant women: asymptomatic — no dysuria, frequency, urgency, suprapubic pain, flank pain, or fever.');
-          pLines.push('- No treatment required.');
-      }
-      // Plan สำหรับ Proteinuria
-      else if (a === 'Proteinuria') {
-          pLines.push('- Recheck UA next 1-2 weeks.');
-      }
-      assessPlanList.push({ title: displayTitle, plans: pLines });
+    let assessTitle = '';
+    let adviceObj = null;
+
+    if (a === 'DM') {
+      assessTitle = 'ระดับน้ำตาลในเลือดสูง / เบาหวาน';
+      adviceObj = { title: 'ระดับน้ำตาลในเลือดสูง / เบาหวาน', text: 'คุณมีระดับน้ำตาลในเลือดสูงซึ่งอาจเป็นสัญญาณของโรคเบาหวาน ควรควบคุมอาหารและติดตามอาการอย่างใกล้ชิด', sub: '- ควบคุมอาหารประเภทแป้ง น้ำตาล และผลไม้รสหวาน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์\n- ทานยาตามแพทย์สั่งอย่างเคร่งครัด\n- ตรวจติดตามระดับน้ำตาลตามนัด' };
+    } else if (a === 'IFG') {
+      assessTitle = 'ระดับน้ำตาลในเลือดสูงกว่าปกติ (ภาวะก่อนเบาหวาน)';
+      adviceObj = { title: 'ระดับน้ำตาลในเลือดสูงกว่าปกติ (ภาวะก่อนเบาหวาน)', text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงกว่าปกติเล็กน้อย แต่ยังไม่ถึงเกณฑ์วินิจฉัยโรคเบาหวาน การปรับเปลี่ยนพฤติกรรมสามารถช่วยป้องกันการเกิดโรคเบาหวานได้', sub: '- ลดเครื่องดื่มที่มีน้ำตาลสูงและอาหารที่มีคาร์โบไฮเดรตขัดสี\n- รับประทานผักให้มากขึ้น เน้นโปรตีนไม่ติดมันและธัญพืชเต็มเมล็ด\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์\n- ตรวจติดตามระดับน้ำตาลตามนัด' };
+    } else if (a === 'Dyslipidemia (LDL สูง)') {
+      assessTitle = 'ไขมันในเลือดสูง (LDL)';
+      adviceObj = { title: 'ไขมันในเลือดสูง (LDL)', text: 'คุณมีระดับไขมัน LDL (ไขมันไม่ดี) ในเลือดสูง ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด แนะนำปรับเปลี่ยนพฤติกรรมการใช้ชีวิตดังนี้:', sub: '- รับประทานอาหารที่ประกอบด้วย ผัก ผลไม้ ธัญพืชไม่ขัดสี แหล่งโปรตีนมาจากปลา สัตว์ทะเล สัตว์ปีก ผลิตภัณฑ์จากนมไขมันต่ำ\n- ลดการบริโภคพลังงานจากไขมันที่มีกรดไขมันอิ่มตัวสูง เช่น ไขมันสัตว์ น้ำมันหมู น้ำมันปาล์ม เนย กะทิ เปลี่ยนจากการใช้ไขมันที่มีกรดไขมันอิ่มตัวสูง เป็นไขมันที่มีกรดไขมันไม่อิ่มตัวเชิงเดี่ยวหรือเชิงซ้อน เช่น น้ำมันมะกอก น้ำมันรำข้าว น้ำมันถั่วเหลือง\n- งดการบริโภคพลังงานจากไขมันทรานส์ (trans-fatty acid) เช่น มาการีน เนยขาว ครีมเทียม และผลิตภัณฑ์เบเกอรี่ที่ใช้เนยเหล่านี้เป็นส่วนประกอบ\n- เพิ่มการบริโภคกากใยอาหาร\n- ออกกำลังกายแบบแอโรบิกระดับหนักปานกลาง เช่น เดินเร็ว วิ่งเหยาะ ว่ายน้ำ ปั่นจักรยาน เป็นต้น สัปดาห์ละ 150-300 นาที' };
+    } else if (a === 'Hypertriglyceridemia') {
+      assessTitle = 'ระดับไขมันไตรกลีเซอไรด์สูง';
+      let sub = '- ลดอาหารจำพวกแป้ง น้ำตาล และเครื่องดื่มที่มีรสหวาน\n- เพิ่มการรับประทานปลาที่มีไขมันดี เช่น ปลาแซลมอน ปลาทู\n- รับประทานอาหารแบบเมดิเตอร์เรเนียน (ผัก ผลไม้ ถั่ว น้ำมันมะกอก)\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์';
+      if (drinksAlc) sub += '\n- งดหรือจำกัดเครื่องดื่มแอลกอฮอล์อย่างเคร่งครัด';
+      adviceObj = { title: 'ระดับไขมันไตรกลีเซอไรด์สูง', text: 'คุณมีระดับไตรกลีเซอไรด์ในเลือดสูง ซึ่งอาจเพิ่มความเสี่ยงต่อโรคหัวใจและตับอ่อนอักเสบ', sub: sub };
+    } else if (a === 'Hyperuricemia / Gout') {
+      assessTitle = 'ระดับกรดยูริกในเลือดสูง / เกาต์';
+      let sub = '- หลีกเลี่ยงอาหารที่มีพิวรีนสูง เช่น เครื่องในสัตว์ เนื้อแดง อาหารทะเลบางชนิด\n- หลีกเลี่ยงเครื่องดื่มที่มีฟรุกโตสสูงและน้ำอัดลม\n- ดื่มน้ำมากกว่า 2 ลิตรต่อวัน\n- รับประทานผลิตภัณฑ์นมไขมันต่ำและผักให้มากขึ้น';
+      if (drinksAlc) sub += '\n- งดเครื่องดื่มแอลกอฮอล์ โดยเฉพาะเบียร์และเหล้า';
+      adviceObj = { title: 'ระดับกรดยูริกในเลือดสูง / เกาต์', text: 'คุณมีระดับกรดยูริกในเลือดสูง ซึ่งอาจทำให้เกิดโรคเกาต์หรือนิ่วในทางเดินปัสสาวะได้', sub: sub };
+    } else if (a === 'Obesity') {
+      assessTitle = 'ภาวะอ้วน';
+      adviceObj = { title: 'ภาวะอ้วน', text: 'น้ำหนักตัวของคุณอยู่ในเกณฑ์ที่ต้องได้รับการดูแล เนื่องจากเพิ่มความเสี่ยงต่อโรคเบาหวาน ความดันโลหิตสูง และโรคหัวใจ', sub: '- เป้าหมาย: ลดน้ำหนัก 5-10% ของน้ำหนักปัจจุบันภายใน 6 เดือน\n- ลดปริมาณอาหารลง 500-750 กิโลแคลอรีต่อวัน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์\n- ปรึกษาแพทย์เพื่อพิจารณาแนวทางลดน้ำหนักที่เหมาะสม' };
+    } else if (a === 'Overweight') {
+      assessTitle = 'น้ำหนักเกินเกณฑ์';
+      adviceObj = { title: 'น้ำหนักเกินเกณฑ์', text: 'น้ำหนักตัวของคุณเกินเกณฑ์มาตรฐานเล็กน้อย การปรับเปลี่ยนพฤติกรรมจะช่วยลดความเสี่ยงต่อโรคเรื้อรังต่างๆ', sub: '- เป้าหมาย: ลดน้ำหนัก 5-10% ของน้ำหนักปัจจุบันภายใน 6 เดือน\n- ลดปริมาณอาหารลง 500-750 กิโลแคลอรีต่อวัน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์' };
+    } else if (a === 'Metabolic Syndrome') {
+      assessTitle = 'กลุ่มอาการเมตาบอลิก';
+      adviceObj = { title: 'กลุ่มอาการเมตาบอลิก', text: 'คุณมีภาวะเมตาบอลิกซินโดรม ซึ่งเป็นกลุ่มของความผิดปกติที่เพิ่มความเสี่ยงต่อโรคหัวใจและเบาหวาน จำเป็นต้องปรับเปลี่ยนพฤติกรรมอย่างจริงจัง', sub: '- ลดน้ำหนักอย่างน้อย 5-10% ของน้ำหนักปัจจุบัน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์\n- ควบคุมอาหาร เน้นผัก ผลไม้ ธัญพืช ลดแป้งและน้ำตาล\n- ติดตามระดับน้ำตาล ไขมัน และความดันโลหิตอย่างสม่ำเสมอ' };
+    } else if (a === 'Fatty Liver (NAFLD / MASLD)') {
+      const subtype = state.assessSubtypes['Fatty Liver (NAFLD / MASLD)'] || 'none';
+      assessTitle = 'ภาวะไขมันพอกตับ';
+      let sub = '- ลดน้ำหนักอย่างน้อย 10% ของน้ำหนักปัจจุบัน\n- รับประทานอาหารแบบ Mediterranean Diet (ผัก ถั่ว ปลา น้ำมันมะกอก)\n- หลีกเลี่ยงเครื่องดื่มที่มีน้ำตาลสูงและฟรุกโตส\n- ลดอาหารประเภทแป้งขัดสี เนื้อแดง และเนื้อแปรรูป\n- ออกกำลังกายแบบแอโรบิกและแรงต้านอย่างน้อย 150 นาทีต่อสัปดาห์';
+      if (drinksAlc) sub += '\n- งดเครื่องดื่มแอลกอฮอล์โดยเด็ดขาด';
+      sub += '\n- ตรวจอัลตราซาวด์ตับซ้ำใน 6-12 เดือน';
+      let warn = '';
+      if (subtype === 'severe') warn = 'เนื่องจากผลตรวจพบภาวะไขมันพอกตับระดับรุนแรง แพทย์จะส่งพบผู้เชี่ยวชาญเพื่อประเมินเพิ่มเติม และอาจต้องตรวจ Fibroscan หรือตรวจชิ้นเนื้อตับ';
+      adviceObj = { title: 'ภาวะไขมันพอกตับ', text: 'ตรวจพบภาวะไขมันสะสมในตับ ซึ่งหากปล่อยไว้อาจนำไปสู่ตับอักเสบและตับแข็งได้ การปรับเปลี่ยนพฤติกรรมสามารถช่วยให้ตับฟื้นตัวได้', sub: sub, warn: warn };
+    } else if (a === 'Elevated Liver Enzymes') {
+      assessTitle = 'ค่าเอนไซม์ตับสูง';
+      let sub = '- หลีกเลี่ยงยาที่มีผลต่อตับ (เช่น พาราเซตามอลในขนาดสูง)\n- ตรวจเลือดซ้ำใน 4-8 สัปดาห์';
+      if (drinksAlc) sub += '\n- งดเครื่องดื่มแอลกอฮอล์โดยเด็ดขาด';
+      adviceObj = { title: 'ค่าเอนไซม์ตับสูง', text: 'ตรวจพบค่าเอนไซม์ตับสูงกว่าปกติ ซึ่งอาจเกิดจากหลายสาเหตุ เช่น ไขมันพอกตับ การดื่มแอลกอฮอล์ ยาบางชนิด หรือไวรัสตับอักเสบ', sub: sub, warn: 'หากค่าเอนไซม์ตับยังสูงผิดปกติต่อเนื่อง หรือสูงมากกว่า 3 เท่าของค่าปกติ ควรพบแพทย์เพื่อตรวจเพิ่มเติม' };
+    } else if (a === 'Anemia') {
+      const subtype = state.assessSubtypes['Anemia'] || 'none';
+      assessTitle = 'ภาวะโลหิตจาง';
+      let sub = '';
+      if (subtype === 'microcytic') sub = '- เม็ดเลือดแดงขนาดเล็กผิดปกติ มักเกิดจากการขาดธาตุเหล็ก\n- รับประทานอาหารที่มีธาตุเหล็กสูง เช่น ตับ เนื้อแดง ไข่แดง ผักใบเขียว\n- ทานวิตามินซีร่วมกับอาหารที่มีธาตุเหล็กเพื่อเพิ่มการดูดซึม\n- แพทย์อาจพิจารณาจ่ายยาธาตุเหล็กเสริม\n- หลีกเลี่ยงการดื่มชา/กาแฟพร้อมมื้ออาหารเพราะขัดขวางการดูดซึมธาตุเหล็ก';
+      else if (subtype === 'macrocytic') sub = '- เม็ดเลือดแดงขนาดใหญ่ผิดปกติ อาจเกิดจากการขาดวิตามินบี 12 หรือโฟเลต\n- รับประทานอาหารที่มีวิตามินบี 12 สูง เช่น เนื้อสัตว์ ไข่ นม\n- รับประทานผักใบเขียวเพื่อเพิ่มโฟเลต\n- แพทย์อาจพิจารณาตรวจระดับวิตามินบี 12 และโฟเลตเพิ่มเติม';
+      else sub = '- แพทย์จะตรวจเพิ่มเติมเพื่อหาสาเหตุของภาวะโลหิตจาง\n- รับประทานอาหารให้ครบ 5 หมู่ เน้นอาหารที่มีธาตุเหล็ก วิตามินบี 12 และโฟเลต\n- ตรวจติดตามตามนัด';
+      adviceObj = { title: 'ภาวะโลหิตจาง', text: 'ตรวจพบภาวะโลหิตจาง ซึ่งอาจเกิดจากการขาดธาตุเหล็ก โรคเรื้อรัง หรือสาเหตุอื่นๆ', sub: sub };
+    } else if (a === 'Microscopic Hematuria') {
+      assessTitle = 'ตรวจพบเม็ดเลือดแดงในปัสสาวะ';
+      adviceObj = { title: 'ตรวจพบเม็ดเลือดแดงในปัสสาวะ', text: 'ตรวจพบเม็ดเลือดแดงในปัสสาวะปริมาณเล็กน้อย ซึ่งอาจเกิดจากหลายสาเหตุ เช่น การออกกำลังกายหนัก การมีประจำเดือน หรือการติดเชื้อ', sub: '- ตรวจปัสสาวะซ้ำใน 48-72 ชั่วโมง หลังจากพักผ่อนเต็มที่และหลีกเลี่ยงปัจจัยชั่วคราว\n- หากยังตรวจพบเม็ดเลือดแดง แพทย์จะส่งพบผู้เชี่ยวชาญด้านระบบทางเดินปัสสาวะ' };
+    } else if (a === 'Asymptomatic Bacteriuria') {
+      assessTitle = 'ตรวจพบเชื้อแบคทีเรียในปัสสาวะ (ไม่มีอาการ)';
+      adviceObj = { title: 'ตรวจพบเชื้อแบคทีเรียในปัสสาวะ (ไม่มีอาการ)', text: 'ตรวจพบเชื้อแบคทีเรียในปัสสาวะโดยที่คุณไม่มีอาการผิดปกติใดๆ เช่น ปัสสาวะแสบขัด ปวดท้องน้อย หรือมีไข้', sub: '- ในผู้หญิงสุขภาพดีที่ไม่มีอาการ ไม่จำเป็นต้องรักษาด้วยยาปฏิชีวนะ\n- หากมีอาการผิดปกติเกิดขึ้นภายหลัง เช่น แสบขัดเวลาปัสสาวะ ปัสสาวะบ่อย มีไข้ ให้กลับมาพบแพทย์' };
+    } else if (a === 'Proteinuria') {
+      assessTitle = 'ตรวจพบโปรตีนในปัสสาวะ';
+      adviceObj = { title: 'ตรวจพบโปรตีนในปัสสาวะ', text: 'ตรวจพบโปรตีนรั่วในปัสสาวะ ซึ่งอาจเป็นสัญญาณของความผิดปกติของไต หรืออาจเกิดจากปัจจัยชั่วคราว เช่น การออกกำลังกายหนัก มีไข้ หรือการยืนนาน', sub: '- ตรวจปัสสาวะซ้ำใน 1-2 สัปดาห์\n- หากยังตรวจพบโปรตีน แพทย์จะพิจารณาตรวจเพิ่มเติมเพื่อประเมินการทำงานของไต' };
+    } else if (a === 'Eosinophilia') {
+      assessTitle = 'ตรวจพบเม็ดเลือดขาวชนิด Eosinophil สูง';
+      adviceObj = { title: 'ตรวจพบเม็ดเลือดขาวชนิด Eosinophil สูง', text: 'ตรวจพบระดับ Eosinophil ในเลือดสูงกว่าปกติ ซึ่งมักเกี่ยวข้องกับภาวะภูมิแพ้ การติดเชื้อปรสิต หรือปฏิกิริยาจากยา', sub: '- สังเกตอาการภูมิแพ้ เช่น ผื่นคัน จาม น้ำมูกไหล\n- หากมีประวัติรับประทานยาหรือสมุนไพร ควรแจ้งแพทย์\n- แพทย์อาจนัดตรวจเพิ่มเติมตามความเหมาะสม' };
+    } else if (a === 'Leukopenia') {
+      assessTitle = 'ตรวจพบเม็ดเลือดขาวต่ำ';
+      adviceObj = { title: 'ตรวจพบเม็ดเลือดขาวต่ำ', text: 'ตรวจพบระดับเม็ดเลือดขาวในเลือดต่ำกว่าปกติ ซึ่งอาจเกิดจากการติดเชื้อไวรัส ยาบางชนิด หรือภาวะทางภูมิคุ้มกัน', sub: '- หลีกเลี่ยงการสัมผัสผู้ป่วยติดเชื้อ ล้างมือบ่อยๆ\n- หากมีไข้หรืออาการติดเชื้อ ให้รีบพบแพทย์\n- แพทย์อาจนัดตรวจเลือดซ้ำเพื่อติดตาม' };
+    } else if (a === 'Abnormal ECG') {
+      assessTitle = 'ตรวจพบคลื่นไฟฟ้าหัวใจผิดปกติ';
+      adviceObj = { title: 'ตรวจพบคลื่นไฟฟ้าหัวใจผิดปกติ', text: 'ผลตรวจคลื่นไฟฟ้าหัวใจ (EKG) พบความผิดปกติ ซึ่งอาจต้องได้รับการตรวจเพิ่มเติมเพื่อประเมินการทำงานของหัวใจ', sub: '- แพทย์จะพิจารณาส่งตรวจเพิ่มเติม เช่น การตรวจหัวใจด้วยคลื่นเสียงสะท้อน (Echocardiogram) หรือการเดินสายพาน (EST)\n- หากมีอาการเจ็บหน้าอก ใจสั่น หรือเหนื่อยง่าย ควรรีบพบแพทย์', warn: 'ควรพบแพทย์เพื่อประเมินผลตรวจและวางแผนการตรวจรักษาต่อไป' };
+    }
+
+    if (assessTitle) assessmentItems.push(assessTitle);
+    if (adviceObj && !addedAdviceTitles.has(adviceObj.title)) {
+      addedAdviceTitles.add(adviceObj.title);
+      adviceItems.push(adviceObj);
+    }
   });
 
-  if (assessPlanList.length > 0) {
-    text += `Assessment and Plan\n`;
-    assessPlanList.forEach((item, i) => {
-      text += `${i + 1}. ${item.title}\n`;
-      if (item.plans.length > 0) {
-        text += `   Plan\n`;
-        item.plans.forEach(p => {
-          text += `   ${p}\n`;
-        });
+  // Lifestyle advice (แยก)
+  if (state.life.diet || state.life.ex || state.life.weight) {
+    let lifestyleText = '';
+    if (state.life.diet) lifestyleText += '- ปรับเปลี่ยนอาหารตามคำแนะนำ (ลดเค็ม ลดไขมัน ควบคุมอาหารเฉพาะโรค)\n';
+    if (state.life.ex) lifestyleText += '- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์ ทั้งแบบแอโรบิกและแรงต้าน\n';
+    if (state.life.weight) lifestyleText += '- ควบคุมน้ำหนัก / งดสูบบุหรี่ / งดหรือลดแอลกอฮอล์\n';
+    if (!addedAdviceTitles.has('การปรับเปลี่ยนพฤติกรรมทั่วไป')) {
+      addedAdviceTitles.add('การปรับเปลี่ยนพฤติกรรมทั่วไป');
+      adviceItems.push({ title: 'การปรับเปลี่ยนพฤติกรรมทั่วไป', text: 'การปรับเปลี่ยนพฤติกรรมเป็นพื้นฐานสำคัญในการป้องกันและรักษาโรคเรื้อรัง', sub: lifestyleText.trim() });
+    }
+  }
+
+  if (state.smoke === 'current' && !addedAdviceTitles.has('การเลิกบุหรี่')) {
+    addedAdviceTitles.add('การเลิกบุหรี่');
+    adviceItems.push({ title: 'การเลิกบุหรี่', text: 'การสูบบุหรี่เพิ่มความเสี่ยงต่อโรคหัวใจ มะเร็งปอด และโรคเรื้อรังอื่นๆ อย่างมีนัยสำคัญ', sub: '- ปรึกษาแพทย์เพื่อขอคำแนะนำในการเลิกบุหรี่\n- มีบริการให้คำปรึกษาและยาช่วยเลิกบุหรี่', warn: 'การเลิกบุหรี่เป็นการเปลี่ยนแปลงที่ส่งผลดีต่อสุขภาพมากที่สุดอย่างหนึ่ง' });
+  }
+
+  currentPatientAdviceItems = { assessmentItems, adviceItems };
+  return currentPatientAdviceItems;
+}
+
+function renderPatientAdvice(data) {
+  const container = document.getElementById('patient-advice-content');
+  if (!data || (data.assessmentItems.length === 0 && data.adviceItems.length === 0)) {
+    container.innerHTML = '<div class="no-advice">ผลตรวจสุขภาพโดยรวมอยู่ในเกณฑ์ปกติ ยังไม่มีคำแนะนำเพิ่มเติมในขณะนี้</div>';
+    return;
+  }
+
+  let html = '';
+  
+  // Section 1: Assessment
+  if (data.assessmentItems.length > 0) {
+    html += '<div class="advice-section"><div class="advice-section-title"># สิ่งที่ตรวจพบ (Assessment)</div>';
+    data.assessmentItems.forEach((item, i) => {
+      html += `<div class="advice-block"><div class="advice-title">#${i + 1}. ${item}</div></div>`;
+    });
+    html += '</div>';
+  }
+
+  // Section 2: คำแนะนำ
+  if (data.adviceItems.length > 0) {
+    html += '<div class="advice-section"><div class="advice-section-title">- คำแนะนำ (Advice)</div>';
+    data.adviceItems.forEach((item, i) => {
+      html += `<div class="advice-block">
+        <div class="advice-title">- ${item.title}</div>
+        <div class="advice-text">${item.text}</div>`;
+      if (item.sub) {
+        html += `<div class="advice-sub">${item.sub.replace(/\n/g, '<br>')}</div>`;
       }
+      if (item.warn) {
+        html += `<div class="advice-warn"><div class="advice-title">คำแนะนำเพิ่มเติม</div><div class="advice-text">${item.warn}</div></div>`;
+      }
+      html += `</div>`;
+    });
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function copyPatientAdvice() {
+  if (!currentPatientAdviceItems || (currentPatientAdviceItems.assessmentItems.length === 0 && currentPatientAdviceItems.adviceItems.length === 0)) {
+    alert('ไม่มีข้อมูลให้คัดลอก');
+    return;
+  }
+  
+  let text = '';
+  
+  if (currentPatientAdviceItems.assessmentItems.length > 0) {
+    text += '# สิ่งที่ตรวจพบ (Assessment)\n';
+    currentPatientAdviceItems.assessmentItems.forEach((item, i) => {
+      text += `#${i + 1}. ${item}\n`;
     });
     text += '\n';
   }
+  
+  if (currentPatientAdviceItems.adviceItems.length > 0) {
+    text += '- คำแนะนำ (Advice)\n';
+    currentPatientAdviceItems.adviceItems.forEach(item => {
+      text += `- ${item.title}\n`;
+      text += `  ${item.text}\n`;
+      if (item.sub) {
+        item.sub.split('\n').forEach(line => {
+          text += `  ${line}\n`;
+        });
+      }
+      if (item.warn) {
+        text += `  [คำแนะนำเพิ่มเติม] ${item.warn}\n`;
+      }
+      text += '\n';
+    });
+  }
 
-  // 7. General Plan & Follow Up
+  navigator.clipboard.writeText(text.trim());
+  const btn = document.querySelector('#content-patient .copy-btn');
+  btn.textContent = 'COPIED ✓';
+  btn.classList.add('ok');
+  setTimeout(() => {
+    btn.textContent = 'COPY ADVICE';
+    btn.classList.remove('ok');
+  }, 1500);
+}
+
+// ==================== GENERATE OUTPUT ====================
+function generateOutput() {
+  const getVal = (id) => document.getElementById(id).value.trim();
+  const getSel = (id) => document.getElementById(id).classList.contains('sel');
+  let text = '';
+  const cc = getVal('in-cc') || 'มาตรวจสุขภาพประจำปี / ไม่มีอาการผิดปกติ (Asymptomatic)';
+  text += `Chief Complaint (CC): ${cc}\n`;
+  text += `Past Medical History: `;
+  if (state.pmh === 'none') text += `No underlying disease\n`; else if (state.pmh === 'known') text += `Known cases of: ${getVal('in-pmh') || '-'}\n`; else text += `\n`;
+  text += '\n';
+  const fhArr = [];
+  if (state.fh.dm) fhArr.push('DM'); if (state.fh.htn) fhArr.push('HTN'); if (state.fh.cad) fhArr.push('CAD/Stroke'); if (state.fh.cancer) fhArr.push(`Cancer (${getVal('in-fh-cancer') || '-'})`); if (state.fh.other) fhArr.push(`Others: ${getVal('in-fh-other') || '-'}`);
+  text += `Family History (FH): ${fhArr.length > 0 ? fhArr.join(', ') : 'Denied'}\n\n`;
+  text += `Social & Lifestyle History (SH):\n`;
+  text += `Smoking: `; if (state.smoke === 'never') text += 'Never\n'; else if (state.smoke === 'ex') text += `Ex-smoker (Quit ${getVal('in-smoke') || '___ yrs'})\n`; else if (state.smoke === 'current') text += `Current (${getVal('in-smoke') || '___ Cigs/day'})\n`;
+  text += `Alcohol: `; if (state.alc === 'none') text += 'None\n'; else if (state.alc === 'occ') text += 'Occasional\n'; else if (state.alc === 'freq') text += `Frequent (${getVal('in-alc') || '___ drinks/week'})\n`;
+  text += `Exercise: `; if (state.ex === 'none') text += 'None\n'; else if (state.ex === '<150') text += '<150 min/wk\n'; else if (state.ex === '>=150') text += '≥150 min/wk (Moderate-Vigorous)\n';
+  const diet = getVal('in-diet'); if (diet) text += `Diet & Sleep: ${diet}\n`;
+  const meds = getVal('in-meds'); if (meds) text += `Current Medications / Supplements: ${meds}\n`;
+  text += `Allergies: `; if (state.allergy === 'none') text += 'NKDA (No Known Drug Allergies)\n'; else if (state.allergy === 'yes') text += `Yes: ${getVal('in-allergy') || '-'}\n`;
+  text += '\n';
+
+  let asSet = new Set(state.assessPresets);
+  const fbsStr = getVal('lab-fbs');
+  if(fbsStr) { const nums = fbsStr.match(/\d+(\.\d+)?/g); if (nums) { let isDM = false, isIFG = false; nums.forEach(nStr => { const n = parseFloat(nStr); if (n >= 126 || n >= 6.5) isDM = true; else if ((n >= 100 && n < 126) || (n >= 5.7 && n < 6.5)) isIFG = true; }); if (isDM) asSet.add('DM'); else if (isIFG) asSet.add('IFG'); } }
+  const ldlStr = getVal('lab-ldl'), cholStr = getVal('lab-chol'), tgStr = getVal('lab-tg');
+  if (ldlStr.match(/\d+/) && parseFloat(ldlStr.match(/\d+/)[0]) >= 130) asSet.add('Dyslipidemia (LDL สูง)');
+  if (cholStr.match(/\d+/) && parseFloat(cholStr.match(/\d+/)[0]) >= 200) asSet.add('Dyslipidemia (LDL สูง)');
+  if (tgStr.match(/\d+/) && parseFloat(tgStr.match(/\d+/)[0]) >= 150) asSet.add('Hypertriglyceridemia');
+
+  let invLines = [];
+  let cbcArr = []; if(getVal('lab-hb')) cbcArr.push(`Hb: ${getVal('lab-hb')}`); if(getVal('lab-wbc')) cbcArr.push(`WBC: ${getVal('lab-wbc')}`); if(getVal('lab-eos')) cbcArr.push(`Eosinophil: ${getVal('lab-eos')}`); if(getVal('lab-plt')) cbcArr.push(`Platelet: ${getVal('lab-plt')}`); if (cbcArr.length > 0) invLines.push(`CBC: ${cbcArr.join(', ')}`);
+  if (fbsStr) invLines.push(`Fasting Blood Sugar / HbA1c: ${fbsStr}`);
+  const uricStr = getVal('lab-uric'); if(uricStr) invLines.push(`Uric Acid: ${uricStr}`);
+  let lipidArr = []; if (cholStr) lipidArr.push(`Chol: ${cholStr}`); if (tgStr) lipidArr.push(`TG: ${tgStr}`); const hdlStr = getVal('lab-hdl'); if (hdlStr) lipidArr.push(`HDL: ${hdlStr}`); if (ldlStr) lipidArr.push(`LDL: ${ldlStr}`); if (lipidArr.length > 0) invLines.push(`Lipid Profile: ${lipidArr.join(' / ')}`);
+  let renalArr = []; if(getVal('lab-bun')) renalArr.push(`BUN: ${getVal('lab-bun')}`); if(getVal('lab-cr')) renalArr.push(`Cr: ${getVal('lab-cr')}`); if(getVal('lab-egfr')) renalArr.push(`eGFR: ${getVal('lab-egfr')}`); if (renalArr.length > 0) invLines.push(`Renal Function: ${renalArr.join(', ')}`);
+  let liverArr = []; if(getVal('lab-ast')) liverArr.push(`AST: ${getVal('lab-ast')}`); if(getVal('lab-alt')) liverArr.push(`ALT: ${getVal('lab-alt')}`); if(getVal('lab-alp')) liverArr.push(`ALP: ${getVal('lab-alp')}`); if (liverArr.length > 0) invLines.push(`Liver Function: ${liverArr.join(', ')}`);
+  let uaArr = []; if(getVal('lab-upro')) uaArr.push(`Protein: ${getVal('lab-upro')}`); if(getVal('lab-uglu')) uaArr.push(`Glucose: ${getVal('lab-uglu')}`); if(getVal('lab-uwbc')) uaArr.push(`WBC: ${getVal('lab-uwbc')}`); if(getVal('lab-urbc')) uaArr.push(`RBC: ${getVal('lab-urbc')}`); if (uaArr.length > 0) invLines.push(`Urine Examination: ${uaArr.join(', ')}`);
+  IMG_LIST.forEach(k => { if(state.img[k]) { const val = getVal('img-in-' + k.replace(/\s+/g, '')); if (val) invLines.push(`${k}: ${val}`); } });
+  if (invLines.length > 0) { text += `Investigation Results\n`; text += invLines.join('\n') + '\n\n'; }
+
+  let assessPlanList = [];
+  const overall = getVal('as-overall'); if (overall) assessPlanList.push({ title: `Overall Status: ${overall}`, plans: [] });
+  const nf = getVal('as-nf'); if (getSel('btn-nf') && nf) assessPlanList.push({ title: `New Findings: ${nf}`, plans: [] });
+  const spmh = getVal('as-spmh'); if (getSel('btn-spmh') && spmh) assessPlanList.push({ title: `Status of Existing PMH: ${spmh}`, plans: [] });
+  const risk = getVal('as-risk'); if (risk) assessPlanList.push({ title: `Risk Stratification: ${risk}`, plans: [] });
+  const drinksAlc = (state.alc === 'occ' || state.alc === 'freq');
+
+  asSet.forEach(a => {
+    let pLines = []; let displayTitle = a;
+    if (a === 'DM') { pLines.push('- แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ'); }
+    else if (a === 'IFG') { pLines.push('- Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
+    else if (a === 'Dyslipidemia (LDL สูง)') { pLines.push('- Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
+    else if (a === 'Hypertriglyceridemia') { pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.'); pLines.push('- Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); }
+    else if (a === 'Hyperuricemia / Gout') { pLines.push(`- Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages${drinksAlc ? ', and alcohol (especially beer and spirits)' : ''}. Encourage low-fat dairy products and vegetable consumption.`); pLines.push('- Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.'); }
+    else if (a === 'Obesity') { pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.'); pLines.push('- Caloric deficit of 500–750 kcal/day.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Consider anti-obesity pharmacotherapy if indicated (e.g., BMI ≥30 or ≥27 with comorbidities).'); }
+    else if (a === 'Overweight') { pLines.push('- Weight Loss Targets: Aim for 5–10% of total body weight reduction over 6 months if comorbidities are present.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Caloric deficit of 500–750 kcal/day.'); }
+    else if (a === 'Metabolic Syndrome') { pLines.push('- Comprehensive lifestyle intervention to address all components of metabolic syndrome.'); pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Monitor and manage individual components: hyperglycemia, dyslipidemia, and hypertension.'); }
+    else if (a === 'Elevated Liver Enzymes') { pLines.push(`- Investigate etiology: ${drinksAlc ? 'alcohol use, ' : ''}viral hepatitis, medications, fatty liver.`); pLines.push(`- Avoid hepatotoxic medications${drinksAlc ? ' and alcohol' : ''}.`); pLines.push('- Repeat LFT in 4-8 weeks.'); pLines.push('- Refer if persistently elevated or >3x ULN.'); }
+    else if (a === 'Fatty Liver (NAFLD / MASLD)') { const subtype = state.assessSubtypes['Fatty Liver (NAFLD / MASLD)'] || 'none'; displayTitle = 'Fatty Liver (NAFLD / MASLD)' + getSubtypeLabel('Fatty Liver (NAFLD / MASLD)', subtype); pLines.push('- Diet: Recommend hypocaloric diet (500–1000 kcal deficit/day) / Mediterranean diet (high in mono- and polyunsaturated fats, vegetables, legumes, fish; low in refined carbohydrates, fructose, and red/processed meats). Avoid sugar-sweetened beverages and high-fructose corn syrup.'); pLines.push('- Weight reduction ≥10% of body weight.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity + resistance training.'); if (drinksAlc) pLines.push('- Alcohol abstinence.'); if (subtype === 'severe') { pLines.push('- Refer to Gastroenterologist/Hepatologist for further evaluation.'); pLines.push('- Consider Fibroscan or liver biopsy to assess fibrosis stage.'); pLines.push('- Repeat LFT and Ultrasound liver in 3-6 months.'); } else if (subtype === 'moderate') { pLines.push('- Repeat LFT and Ultrasound liver in 6 months.'); } else { pLines.push('- Follow-up Ultrasound liver in 6-12 months.'); } }
+    else if (a === 'Anemia') { const subtype = state.assessSubtypes['Anemia'] || 'none'; displayTitle = 'Anemia' + getSubtypeLabel('Anemia', subtype); pLines.push('- Evaluate for underlying causes: nutritional deficiency, chronic disease, blood loss, hemolysis, bone marrow disorders.'); if (subtype === 'microcytic') { pLines.push('- Likely Iron Deficiency Anemia: Check serum ferritin, serum iron, TIBC.'); pLines.push('- Investigate source of blood loss (GI endoscopy/colonoscopy if indicated, especially in men and postmenopausal women).'); pLines.push('- Consider trial of oral iron supplementation (e.g., ferrous sulfate 325 mg daily) with follow-up CBC in 4-8 weeks.'); pLines.push('- If thalassemia suspected (based on ethnicity/family history), check hemoglobin electrophoresis.'); } else if (subtype === 'normocytic') { pLines.push('- Consider Anemia of Chronic Disease, early iron deficiency, chronic kidney disease, or mixed etiology.'); pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, BUN/Cr.'); pLines.push('- If no obvious cause, consider referral to hematologist for further evaluation.'); } else if (subtype === 'macrocytic') { pLines.push('- Check vitamin B12 and folate levels.'); pLines.push('- Evaluate for alcohol use, liver disease, hypothyroidism, or medication-induced causes.'); pLines.push('- If B12/folate deficiency confirmed, initiate replacement therapy and monitor response.'); } else { pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, vitamin B12, and folate levels.'); pLines.push('- Further workup guided by MCV and clinical context.'); } }
+    else if (a === 'Microscopic Hematuria') { pLines.push('- Repeat UA in 48–72 hours after resolving benign transient causes.'); pLines.push('- Refer urologist if UA still shows microscopic hematuria.'); }
+    else if (a === 'Asymptomatic Bacteriuria') { pLines.push('- Healthy, non-pregnant women: asymptomatic — no dysuria, frequency, urgency, suprapubic pain, flank pain, or fever.'); pLines.push('- No treatment required.'); }
+    else if (a === 'Proteinuria') { pLines.push('- Recheck UA next 1-2 weeks.'); }
+    assessPlanList.push({ title: displayTitle, plans: pLines });
+  });
+
+  if (assessPlanList.length > 0) { text += `Assessment and Plan\n`; assessPlanList.forEach((item, i) => { text += `${i + 1}. ${item.title}\n`; if (item.plans.length > 0) { text += `   Plan\n`; item.plans.forEach(p => { text += `   ${p}\n`; }); } }); text += '\n'; }
+
   let genPlanText = '';
   let lifeArr = [];
   if (state.life.diet) lifeArr.push('- Diet (e.g., Low salt, Low fat, Diabetic diet)');
   if (state.life.ex) lifeArr.push('- Exercise (Recommend ≥150 min/wk aerobic + resistance)');
   if (state.life.weight) lifeArr.push('- Weight management / Stop smoking or alcohol');
-  
-  if (lifeArr.length > 0) {
-    genPlanText += `General Lifestyle Modification:\n${lifeArr.join('\n')}\n\n`;
-  }
-  
-  const invPlan = getVal('pl-inv');
-  if (invPlan) genPlanText += `Further Investigations: ${invPlan}\n\n`;
-
+  if (lifeArr.length > 0) genPlanText += `General Lifestyle Modification:\n${lifeArr.join('\n')}\n\n`;
+  const invPlan = getVal('pl-inv'); if (invPlan) genPlanText += `Further Investigations: ${invPlan}\n\n`;
   let fuArr = [];
   if (getSel('btn-fu1')) fuArr.push('Routine Annual Check-up next year');
-  
-  const fu2 = getVal('pl-fu');
-  if (getSel('btn-fu2')) fuArr.push(`F/U for abnormal results in: ${fu2 || '___'}`);
-  
-  if (fuArr.length > 0) {
-    genPlanText += `Follow-up (F/U):\n${fuArr.map(x => '- ' + x).join('\n')}\n`;
-  }
-
-  if (genPlanText) {
-    text += `Further Plan & Follow-up\n${genPlanText}`;
-  }
+  const fu2 = getVal('pl-fu'); if (getSel('btn-fu2')) fuArr.push(`F/U for abnormal results in: ${fu2 || '___'}`);
+  if (fuArr.length > 0) genPlanText += `Follow-up (F/U):\n${fuArr.map(x => '- ' + x).join('\n')}\n`;
+  if (genPlanText) text += `Further Plan & Follow-up\n${genPlanText}`;
 
   document.getElementById('out-text').textContent = text.trim();
+  
+  // Build patient advice
+  const adviceData = buildPatientAdvice(asSet, drinksAlc);
+  renderPatientAdvice(adviceData);
+  
   document.getElementById('view-form').style.display = 'none';
   document.getElementById('view-output').style.display = 'block';
+  switchTab('medical');
   window.scrollTo(0,0);
 }
 
@@ -935,29 +655,17 @@ function showForm() {
   document.getElementById('view-output').style.display = 'none';
 }
 
-function copyOutput(btn) {
-  const text = document.getElementById('out-text').textContent;
+function copyOutput(btn, sourceId) {
+  const text = document.getElementById(sourceId).textContent;
   navigator.clipboard.writeText(text);
   btn.textContent = 'COPIED ✓';
   btn.classList.add('ok');
-  setTimeout(() => {
-    btn.textContent = 'COPY TEXT';
-    btn.classList.remove('ok');
-  }, 1500);
+  setTimeout(() => { btn.textContent = 'COPY TEXT'; btn.classList.remove('ok'); }, 1500);
 }
 
 // Init
-updatePMH('none');
-updateFH();
-updateSmoke('never');
-updateAlc('none');
-updateEx('none');
-updateAllergy('none');
-updateLife();
-initImaging();
-updateImgSel();
-updateAssessPresets();
-renderSubtypes();
+updatePMH('none'); updateFH(); updateSmoke('never'); updateAlc('none'); updateEx('none'); updateAllergy('none'); updateLife();
+initImaging(); updateImgSel(); updateAssessPresets(); renderSubtypes();
 </script>
 </body>
 </html>
