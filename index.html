@@ -268,7 +268,7 @@ Object.keys(SUBTYPE_OPTIONS).forEach(key => { state.assessSubtypes[key] = 'none'
 
 const ASSESS_PRESETS = [
   'Dyslipidemia', 'Hypertriglyceridemia', 'Mixed Hyperlipidemia', 'Low HDL', 'IFG', 'DM', 
-  'Hyperuricemia / Gout', 'Obesity', 'Overweight', 'Metabolic Syndrome', 
+  'Hyperuricemia / Gout', 'Hypertension', 'Obesity', 'Overweight', 'Metabolic Syndrome', 
   'Fatty Liver (NAFLD / MASLD)', 'Elevated Liver Enzymes', 'Microscopic Hematuria', 
   'Proteinuria', 'CKD / Renal impairment', 'Asymptomatic Bacteriuria', 'Anemia', 'Polycythemia', 'Eosinophilia', 'Leukopenia', 'Thrombocytopenia', 'Abnormal ECG'
 ];
@@ -281,6 +281,7 @@ const PRESET_FIELDS = {
   'Low HDL': [{id:'hdl',label:'HDL',unit:'mg/dL'}],
   'IFG': [{id:'fbs',label:'FBS',unit:'mg/dL'},{id:'hba1c',label:'HbA1c',unit:'%'}],
   'DM': [{id:'fbs',label:'FBS',unit:'mg/dL'},{id:'hba1c',label:'HbA1c',unit:'%'}],
+  'Hypertension': [{id:'bp',label:'BP',unit:'mmHg'}],
   'Hyperuricemia / Gout': [{id:'uric',label:'Uric Acid',unit:'mg/dL'}],
   'Fatty Liver (NAFLD / MASLD)': [{id:'ast',label:'AST',unit:'U/L'},{id:'alt',label:'ALT',unit:'U/L'}],
   'Elevated Liver Enzymes': [{id:'ast',label:'AST',unit:'U/L'},{id:'alt',label:'ALT',unit:'U/L'},{id:'alp',label:'ALP',unit:'U/L'}],
@@ -425,6 +426,7 @@ function planFor(a) {
     else if (a === 'Hypertriglyceridemia') { pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.'); pLines.push('- Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); }
     else if (a === 'Mixed Hyperlipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC): reduce saturated and trans fats, increase vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose); increase omega-3 fatty acids (fatty fish); emphasize Mediterranean diet.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); pLines.push('- Consider pharmacotherapy (e.g., statin ± fibrate) if lifestyle modification is insufficient; recheck lipid profile in 3-6 months.'); }
     else if (a === 'Hyperuricemia / Gout') { pLines.push(`- Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages${drinksAlc ? ', and alcohol (especially beer and spirits)' : ''}. Encourage low-fat dairy products and vegetable consumption.`); pLines.push('- Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.'); }
+    else if (a === 'Hypertension') { pLines.push('- Confirm diagnosis with repeated office BP and/or home / ambulatory BP monitoring.'); pLines.push('- Lifestyle modification: DASH diet, sodium <2 g/day, weight reduction, regular aerobic exercise, limit alcohol, smoking cessation.'); pLines.push('- Assess other cardiovascular risk factors and target organ damage (UA, creatinine/eGFR, ECG).'); pLines.push('- Consider antihypertensive pharmacotherapy according to BP level and cardiovascular risk; follow-up BP in 1–3 months.'); }
     else if (a === 'Obesity') { pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.'); pLines.push('- Caloric deficit of 500–750 kcal/day.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Consider anti-obesity pharmacotherapy if indicated (e.g., BMI ≥30 or ≥27 with comorbidities).'); }
     else if (a === 'Overweight') { pLines.push('- Weight Loss Targets: Aim for 5–10% of total body weight reduction over 6 months if comorbidities are present.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Caloric deficit of 500–750 kcal/day.'); }
     else if (a === 'Metabolic Syndrome') { pLines.push('- Comprehensive lifestyle intervention to address all components of metabolic syndrome.'); pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Monitor and manage individual components: hyperglycemia, dyslipidemia, and hypertension.'); }
@@ -486,56 +488,106 @@ function getOtherProblems() {
   })).filter(o => o.name);
 }
 
+// ==================== ADVICE: รวมโรคกลุ่มเดียวกัน ====================
+// ข้อแนะนำแต่ละข้อมี key และหมวด เมื่อมีหลายโรคในกลุ่มเมตาบอลิก จะรวมเป็นชุดเดียวและตัดข้อซ้ำออก
+const ADVICE_CAT_ORDER = ['diet', 'weight', 'exercise', 'alcohol', 'other', 'follow'];
+const ADV = {
+  diet_sugar: ['diet', 'ลดอาหารและเครื่องดื่มที่มีน้ำตาลสูง เช่น น้ำอัดลม ชานม ผลไม้รสหวาน และลดแป้งขัดสี'],
+  diet_veg: ['diet', 'รับประทานผัก ธัญพืชไม่ขัดสี และอาหารที่มีกากใยสูงให้มากขึ้น เลือกโปรตีนไม่ติดมัน เช่น ปลา สัตว์ปีก และนมไขมันต่ำ'],
+  diet_fat: ['diet', 'ลดไขมันอิ่มตัว เช่น ไขมันสัตว์ น้ำมันหมู น้ำมันปาล์ม เนย กะทิ งดไขมันทรานส์ (มาการีน เนยขาว ครีมเทียม เบเกอรี่) และเปลี่ยนเป็นน้ำมันมะกอก น้ำมันรำข้าว น้ำมันถั่วเหลือง'],
+  diet_fish: ['diet', 'เพิ่มการรับประทานปลาที่มีไขมันดี เช่น ปลาแซลมอน ปลาทู และรับประทานอาหารแบบเมดิเตอร์เรเนียน (ผัก ผลไม้ ถั่ว น้ำมันมะกอก)'],
+  diet_salt: ['diet', 'ลดอาหารเค็ม (โซเดียมไม่เกิน 2,000 มิลลิกรัมต่อวัน หรือเกลือไม่เกิน 1 ช้อนชา) หลีกเลี่ยงอาหารแปรรูป น้ำจิ้ม ซอส และเครื่องปรุงรสเค็ม'],
+  diet_purine: ['diet', 'หลีกเลี่ยงอาหารที่มีพิวรีนสูง เช่น เครื่องในสัตว์ เนื้อแดง อาหารทะเลบางชนิด'],
+  water: ['diet', 'ดื่มน้ำให้เพียงพอ มากกว่า 2 ลิตรต่อวัน (ยกเว้นแพทย์จำกัดน้ำ)'],
+  weight: ['weight', 'ลดน้ำหนัก 5-10% ของน้ำหนักปัจจุบันภายใน 6 เดือน โดยลดพลังงานจากอาหารลง 500-750 กิโลแคลอรีต่อวัน'],
+  weight_ctrl: ['weight', 'ควบคุมน้ำหนักให้อยู่ในเกณฑ์ปกติ'],
+  exercise: ['exercise', 'ออกกำลังกายแบบแอโรบิกระดับปานกลาง เช่น เดินเร็ว วิ่งเหยาะ ว่ายน้ำ ปั่นจักรยาน อย่างน้อย 150 นาทีต่อสัปดาห์ ร่วมกับออกกำลังกายแบบแรงต้านสัปดาห์ละ 2 ครั้ง'],
+  alcohol: ['alcohol', 'งดหรือจำกัดเครื่องดื่มแอลกอฮอล์'],
+  smoke_stop: ['other', 'งดสูบบุหรี่'],
+  follow_dm_repeat: ['follow', 'ตรวจน้ำตาลในเลือด (FBS) และ HbA1c ซ้ำตามที่แพทย์นัด เพื่อยืนยันการวินิจฉัย'],
+  follow_dm: ['follow', 'ตรวจติดตามระดับน้ำตาลในเลือดตามนัด'],
+  follow_meds: ['follow', 'หากแพทย์สั่งยา ให้ทานยาอย่างต่อเนื่องและไม่หยุดยาเอง'],
+  follow_lipid: ['follow', 'ตรวจติดตามระดับไขมันในเลือดทุก 3-6 เดือน หรือปรึกษาแพทย์เพื่อพิจารณาการรักษาด้วยยา'],
+  follow_bp: ['follow', 'วัดความดันโลหิตที่บ้านสม่ำเสมอ จดบันทึก และนำมาให้แพทย์ดู'],
+  follow_weight: ['follow', 'ปรึกษาแพทย์เพื่อพิจารณาแนวทางลดน้ำหนักที่เหมาะสม'],
+  follow_mets: ['follow', 'ติดตามระดับน้ำตาล ไขมัน และความดันโลหิตอย่างสม่ำเสมอ']
+};
+const ADVICE_GROUPS = {
+  metabolic: ['DM', 'IFG', 'Dyslipidemia', 'Hypertriglyceridemia', 'Mixed Hyperlipidemia', 'Low HDL', 'Hypertension', 'Obesity', 'Overweight', 'Metabolic Syndrome', 'Hyperuricemia / Gout'],
+  liver: ['Fatty Liver (NAFLD / MASLD)', 'Elevated Liver Enzymes'],
+  renal: ['CKD / Renal impairment', 'Proteinuria', 'Microscopic Hematuria', 'Asymptomatic Bacteriuria']
+};
+const adviceGroupOf = (a) => Object.keys(ADVICE_GROUPS).find(g => ADVICE_GROUPS[g].includes(a)) || null;
+
+// รวมคำแนะนำของโรคในกลุ่มเดียวกันเป็นหัวข้อเดียว (ถ้ามีโรคเดียว คืนค่าเดิม)
+function mergeAdvice(group, items) {
+  if (items.length === 1) {
+    const o = items[0];
+    if (!o.keys) return o;
+    return { title: o.title, text: o.text, sub: o.keys.map(k => '- ' + ADV[k][1]).join('\n'), warn: o.warn };
+  }
+  const title = items.map(o => o.short || o.title).join(' + ');
+  const text = items.map(o => `• ${o.short || o.title}: ${o.text}`).join('\n');
+  let sub, warn = [...new Set(items.map(o => o.warn).filter(Boolean))].join('\n');
+  if (group === 'metabolic') {
+    let keys = [...new Set(items.flatMap(o => o.keys))];
+    if (keys.includes('weight')) keys = keys.filter(k => k !== 'weight_ctrl');
+    keys.sort((x, y) => ADVICE_CAT_ORDER.indexOf(ADV[x][0]) - ADVICE_CAT_ORDER.indexOf(ADV[y][0]));
+    sub = keys.map(k => '- ' + ADV[k][1]).join('\n');
+  } else {
+    sub = [...new Set(items.flatMap(o => (o.sub || '').split('\n')).filter(Boolean))].join('\n');
+  }
+  return { title, text, sub, warn };
+}
+
 // ==================== BUILD PATIENT ADVICE (แยก Assessment กับ คำแนะนำ) ====================
 function buildPatientAdvice(asSet, drinksAlc, extra) {
   currentPatientAdviceItems = [];
   const assessmentItems = [];
   const adviceItems = [];
   const addedAdviceTitles = new Set(); // กันคำแนะนำซ้ำ
+  const pendingAdvice = [];
 
   asSet.forEach(a => {
     let assessTitle = '';
     let adviceObj = null;
 
     if (a === 'DM') {
-      assessTitle = (state.assessSubtypes['DM'] === 'suspected') ? 'ระดับน้ำตาลในเลือดสูง (สงสัยเบาหวาน ต้องตรวจยืนยัน)' : 'ระดับน้ำตาลในเลือดสูง / เบาหวาน';
-      adviceObj = (state.assessSubtypes['DM'] === 'suspected')
-        ? { title: assessTitle, text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงเข้าได้กับโรคเบาหวาน แต่ต้องตรวจซ้ำเพื่อยืนยันการวินิจฉัย', sub: '- ตรวจน้ำตาลในเลือด (FBS) และ HbA1c ซ้ำตามที่แพทย์นัด\n- ควบคุมอาหารประเภทแป้ง น้ำตาล และผลไม้รสหวาน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์' }
-        : { title: assessTitle, text: 'คุณมีระดับน้ำตาลในเลือดสูงซึ่งเข้าได้กับโรคเบาหวาน ควรควบคุมอาหารและติดตามอาการอย่างใกล้ชิด', sub: '- ควบคุมอาหารประเภทแป้ง น้ำตาล และผลไม้รสหวาน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์\n- หากแพทย์สั่งยา ให้ทานยาอย่างเคร่งครัด\n- ตรวจติดตามระดับน้ำตาลตามนัด' };
+      const susp = state.assessSubtypes['DM'] === 'suspected';
+      assessTitle = susp ? 'ระดับน้ำตาลในเลือดสูง (สงสัยเบาหวาน ต้องตรวจยืนยัน)' : 'ระดับน้ำตาลในเลือดสูง / เบาหวาน';
+      adviceObj = susp
+        ? { short: 'สงสัยเบาหวาน', title: assessTitle, text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงเข้าได้กับโรคเบาหวาน แต่ต้องตรวจซ้ำเพื่อยืนยันการวินิจฉัย', keys: ['diet_sugar', 'exercise', 'follow_dm_repeat'] }
+        : { short: 'เบาหวาน', title: assessTitle, text: 'คุณมีระดับน้ำตาลในเลือดสูงซึ่งเข้าได้กับโรคเบาหวาน ควรควบคุมอาหารและติดตามอาการอย่างใกล้ชิด', keys: ['diet_sugar', 'diet_veg', 'exercise', 'follow_meds', 'follow_dm'] };
     } else if (a === 'IFG') {
-      assessTitle = 'ระดับน้ำตาลในเลือดสูงกว่าปกติ (ภาวะก่อนเบาหวาน)';
-      adviceObj = { title: 'ระดับน้ำตาลในเลือดสูงกว่าปกติ (ภาวะก่อนเบาหวาน)', text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงกว่าปกติเล็กน้อย แต่ยังไม่ถึงเกณฑ์วินิจฉัยโรคเบาหวาน การปรับเปลี่ยนพฤติกรรมสามารถช่วยป้องกันการเกิดโรคเบาหวานได้', sub: '- ลดเครื่องดื่มที่มีน้ำตาลสูงและอาหารที่มีคาร์โบไฮเดรตขัดสี\n- รับประทานผักให้มากขึ้น เน้นโปรตีนไม่ติดมันและธัญพืชเต็มเมล็ด\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์\n- ตรวจติดตามระดับน้ำตาลตามนัด' };
+      assessTitle = 'น้ำตาลในเลือดสูงเสี่ยงโรคเบาหวาน';
+      adviceObj = { short: 'น้ำตาลในเลือดสูงเสี่ยงโรคเบาหวาน', title: assessTitle, text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงกว่าปกติเล็กน้อย แต่ยังไม่ถึงเกณฑ์วินิจฉัยโรคเบาหวาน การปรับเปลี่ยนพฤติกรรมสามารถช่วยป้องกันการเกิดโรคเบาหวานได้', keys: ['diet_sugar', 'diet_veg', 'exercise', 'follow_dm'] };
     } else if (a === 'Dyslipidemia') {
       assessTitle = 'ไขมันในเลือดสูง (คอเลสเตอรอล / LDL)';
-      adviceObj = { title: 'ไขมันในเลือดสูง (คอเลสเตอรอล / LDL)', text: 'ระดับไขมันคอเลสเตอรอลหรือ LDL (ไขมันไม่ดี) ในเลือดสูง ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด แนะนำปรับเปลี่ยนพฤติกรรมการใช้ชีวิตดังนี้', sub: '- รับประทานอาหารที่ประกอบด้วย ผัก ผลไม้ ธัญพืชไม่ขัดสี แหล่งโปรตีนมาจากปลา สัตว์ทะเล สัตว์ปีก ผลิตภัณฑ์จากนมไขมันต่ำ\n- ลดการบริโภคพลังงานจากไขมันที่มีกรดไขมันอิ่มตัวสูง เช่น ไขมันสัตว์ น้ำมันหมู น้ำมันปาล์ม เนย กะทิ เปลี่ยนจากการใช้ไขมันที่มีกรดไขมันอิ่มตัวสูง เป็นไขมันที่มีกรดไขมันไม่อิ่มตัวเชิงเดี่ยวหรือเชิงซ้อน เช่น น้ำมันมะกอก น้ำมันรำข้าว น้ำมันถั่วเหลือง\n- งดการบริโภคพลังงานจากไขมันทรานส์ (trans-fatty acid) เช่น มาการีน เนยขาว ครีมเทียม และผลิตภัณฑ์เบเกอรี่ที่ใช้เนยเหล่านี้เป็นส่วนประกอบ\n- เพิ่มการบริโภคกากใยอาหาร\n- ออกกำลังกายแบบแอโรบิกระดับหนักปานกลาง เช่น เดินเร็ว วิ่งเหยาะ ว่ายน้ำ ปั่นจักรยาน เป็นต้น สัปดาห์ละ 150-300 นาที\n- แนะนำติดตามระดับไขมันในเลือด 3-6 เดือน หรือปรึกษาแพทย์เพื่อรักษา' };
+      adviceObj = { short: 'ไขมันในเลือดสูง', title: assessTitle, text: 'ระดับไขมันคอเลสเตอรอลหรือ LDL (ไขมันไม่ดี) ในเลือดสูง ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด', keys: ['diet_veg', 'diet_fat', 'exercise', 'follow_lipid'] };
     } else if (a === 'Low HDL') {
       assessTitle = 'ไขมันดี (HDL) ต่ำ';
-      adviceObj = { title: 'ไขมันดี (HDL) ต่ำ', text: 'ระดับไขมันดี (HDL) ในเลือดต่ำกว่าเกณฑ์ ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด', sub: '- ออกกำลังกายแบบแอโรบิกอย่างสม่ำเสมอ อย่างน้อย 150 นาทีต่อสัปดาห์\n- เลิกสูบบุหรี่ (ถ้าสูบ)\n- ลดแป้งขัดสีและน้ำตาล เลือกไขมันไม่อิ่มตัว เช่น น้ำมันมะกอก น้ำมันรำข้าว ปลา ถั่ว\n- ควบคุมน้ำหนักให้อยู่ในเกณฑ์' };
+      adviceObj = { short: 'HDL ต่ำ', title: assessTitle, text: 'ระดับไขมันดี (HDL) ในเลือดต่ำกว่าเกณฑ์ ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด', keys: ['exercise', 'diet_sugar', 'diet_fat', 'smoke_stop'] };
     } else if (a === 'Hypertriglyceridemia') {
       assessTitle = 'ระดับไขมันไตรกลีเซอไรด์สูง';
-      let sub = '- ลดอาหารจำพวกแป้ง น้ำตาล และเครื่องดื่มที่มีรสหวาน\n- เพิ่มการรับประทานปลาที่มีไขมันดี เช่น ปลาแซลมอน ปลาทู\n- รับประทานอาหารแบบเมดิเตอร์เรเนียน (ผัก ผลไม้ ถั่ว น้ำมันมะกอก)\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์';
-      if (drinksAlc) sub += '\n- งดหรือจำกัดเครื่องดื่มแอลกอฮอล์อย่างเคร่งครัด';
-      adviceObj = { title: 'ระดับไขมันไตรกลีเซอไรด์สูง', text: 'คุณมีระดับไตรกลีเซอไรด์ในเลือดสูง ซึ่งอาจเพิ่มความเสี่ยงต่อโรคหัวใจและตับอ่อนอักเสบ', sub: sub };
+      adviceObj = { short: 'ไตรกลีเซอไรด์สูง', title: assessTitle, text: 'คุณมีระดับไตรกลีเซอไรด์ในเลือดสูง ซึ่งอาจเพิ่มความเสี่ยงต่อโรคหัวใจและตับอ่อนอักเสบ', keys: ['diet_sugar', 'diet_fish', 'exercise'].concat(drinksAlc ? ['alcohol'] : []) };
     } else if (a === 'Mixed Hyperlipidemia') {
       assessTitle = 'ไขมันในเลือดสูงชนิดผสม (LDL และไตรกลีเซอไรด์)';
-      let sub = '- รับประทานอาหารที่ประกอบด้วย ผัก ผลไม้ ธัญพืชไม่ขัดสี แหล่งโปรตีนมาจากปลา สัตว์ทะเล สัตว์ปีก ผลิตภัณฑ์จากนมไขมันต่ำ\n- ลดอาหารจำพวกแป้งขัดสี น้ำตาล และเครื่องดื่มที่มีรสหวาน\n- ลดการบริโภคไขมันอิ่มตัวและไขมันทรานส์ เปลี่ยนเป็นไขมันไม่อิ่มตัว เช่น น้ำมันมะกอก น้ำมันรำข้าว\n- เพิ่มการรับประทานปลาที่มีไขมันดี เช่น ปลาแซลมอน ปลาทู และเพิ่มกากใยอาหาร\n- ออกกำลังกายแบบแอโรบิกอย่างน้อย 150 นาทีต่อสัปดาห์';
-      if (drinksAlc) sub += '\n- งดหรือจำกัดเครื่องดื่มแอลกอฮอล์อย่างเคร่งครัด';
-      sub += '\n- แนะนำติดตามระดับไขมันในเลือด 3-6 เดือน หรือปรึกษาแพทย์เพื่อพิจารณาการรักษาด้วยยา';
-      adviceObj = { title: 'ไขมันในเลือดสูงชนิดผสม (LDL และไตรกลีเซอไรด์)', text: 'คุณมีทั้งระดับไขมัน LDL และไตรกลีเซอไรด์ในเลือดสูงพร้อมกัน (ไขมันในเลือดสูงชนิดผสม) ซึ่งเพิ่มความเสี่ยงต่อโรคหัวใจและหลอดเลือดมากกว่าการมีไขมันสูงเพียงชนิดเดียว', sub: sub };
+      adviceObj = { short: 'ไขมันในเลือดสูงชนิดผสม', title: assessTitle, text: 'คุณมีทั้งระดับไขมัน LDL และไตรกลีเซอไรด์ในเลือดสูงพร้อมกัน ซึ่งเพิ่มความเสี่ยงต่อโรคหัวใจและหลอดเลือดมากกว่าการมีไขมันสูงเพียงชนิดเดียว', keys: ['diet_veg', 'diet_sugar', 'diet_fat', 'diet_fish', 'exercise'].concat(drinksAlc ? ['alcohol'] : [], ['follow_lipid']) };
+    } else if (a === 'Hypertension') {
+      assessTitle = 'ความดันโลหิตสูง';
+      adviceObj = { short: 'ความดันโลหิตสูง', title: assessTitle, text: 'ความดันโลหิตสูงกว่าเกณฑ์ ซึ่งเพิ่มความเสี่ยงต่อโรคหัวใจ หลอดเลือดสมอง และโรคไต', keys: ['diet_salt', 'diet_veg', 'weight_ctrl', 'exercise'].concat(drinksAlc ? ['alcohol'] : [], ['smoke_stop', 'follow_bp']), warn: 'หากมีอาการปวดศีรษะรุนแรง เจ็บหน้าอก ใจสั่น แขนขาอ่อนแรง หรือพูดไม่ชัด ให้รีบพบแพทย์ทันที' };
     } else if (a === 'Hyperuricemia / Gout') {
       assessTitle = 'ระดับกรดยูริกในเลือดสูง / เกาต์';
-      let sub = '- หลีกเลี่ยงอาหารที่มีพิวรีนสูง เช่น เครื่องในสัตว์ เนื้อแดง อาหารทะเลบางชนิด\n- หลีกเลี่ยงเครื่องดื่มที่มีฟรุกโตสสูงและน้ำอัดลม\n- ดื่มน้ำมากกว่า 2 ลิตรต่อวัน\n- รับประทานผลิตภัณฑ์นมไขมันต่ำและผักให้มากขึ้น';
-      if (drinksAlc) sub += '\n- งดเครื่องดื่มแอลกอฮอล์ โดยเฉพาะเบียร์และเหล้า';
-      adviceObj = { title: 'ระดับกรดยูริกในเลือดสูง / เกาต์', text: 'คุณมีระดับกรดยูริกในเลือดสูง ซึ่งอาจทำให้เกิดโรคเกาต์หรือนิ่วในทางเดินปัสสาวะได้', sub: sub };
+      adviceObj = { short: 'กรดยูริกสูง', title: assessTitle, text: 'คุณมีระดับกรดยูริกในเลือดสูง ซึ่งอาจทำให้เกิดโรคเกาต์หรือนิ่วในทางเดินปัสสาวะได้', keys: ['diet_purine', 'diet_sugar', 'water', 'diet_veg'].concat(drinksAlc ? ['alcohol'] : []) };
     } else if (a === 'Obesity') {
       assessTitle = 'ภาวะอ้วน';
-      adviceObj = { title: 'ภาวะอ้วน', text: 'น้ำหนักตัวของคุณอยู่ในเกณฑ์ที่ต้องได้รับการดูแล เนื่องจากเพิ่มความเสี่ยงต่อโรคเบาหวาน ความดันโลหิตสูง และโรคหัวใจ', sub: '- เป้าหมาย: ลดน้ำหนัก 5-10% ของน้ำหนักปัจจุบันภายใน 6 เดือน\n- ลดปริมาณอาหารลง 500-750 กิโลแคลอรีต่อวัน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์\n- ปรึกษาแพทย์เพื่อพิจารณาแนวทางลดน้ำหนักที่เหมาะสม' };
+      adviceObj = { short: 'ภาวะอ้วน', title: assessTitle, text: 'น้ำหนักตัวของคุณอยู่ในเกณฑ์ที่ต้องได้รับการดูแล เนื่องจากเพิ่มความเสี่ยงต่อโรคเบาหวาน ความดันโลหิตสูง และโรคหัวใจ', keys: ['weight', 'exercise', 'follow_weight'] };
     } else if (a === 'Overweight') {
       assessTitle = 'น้ำหนักเกินเกณฑ์';
-      adviceObj = { title: 'น้ำหนักเกินเกณฑ์', text: 'น้ำหนักตัวเกินเกณฑ์มาตรฐาน การปรับเปลี่ยนพฤติกรรมจะช่วยลดความเสี่ยงต่อโรคเรื้อรังต่างๆ', sub: '- เป้าหมาย: ลดน้ำหนัก 5-10% ของน้ำหนักปัจจุบันภายใน 6 เดือน\n- ลดปริมาณอาหารลง 500-750 กิโลแคลอรีต่อวัน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์' };
+      adviceObj = { short: 'น้ำหนักเกิน', title: assessTitle, text: 'น้ำหนักตัวเกินเกณฑ์มาตรฐาน การปรับเปลี่ยนพฤติกรรมจะช่วยลดความเสี่ยงต่อโรคเรื้อรังต่างๆ', keys: ['weight', 'exercise'] };
     } else if (a === 'Metabolic Syndrome') {
       assessTitle = 'กลุ่มอาการเมตาบอลิก';
-      adviceObj = { title: 'กลุ่มอาการเมตาบอลิก', text: 'คุณมีภาวะเมตาบอลิกซินโดรม ซึ่งเป็นกลุ่มของความผิดปกติที่เพิ่มความเสี่ยงต่อโรคหัวใจและเบาหวาน จำเป็นต้องปรับเปลี่ยนพฤติกรรมอย่างจริงจัง', sub: '- ลดน้ำหนักอย่างน้อย 5-10% ของน้ำหนักปัจจุบัน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์\n- ควบคุมอาหาร เน้นผัก ผลไม้ ธัญพืช ลดแป้งและน้ำตาล\n- ติดตามระดับน้ำตาล ไขมัน และความดันโลหิตอย่างสม่ำเสมอ' };
+      adviceObj = { short: 'เมตาบอลิกซินโดรม', title: assessTitle, text: 'คุณมีภาวะเมตาบอลิกซินโดรม ซึ่งเป็นกลุ่มของความผิดปกติที่เพิ่มความเสี่ยงต่อโรคหัวใจและเบาหวาน จำเป็นต้องปรับเปลี่ยนพฤติกรรมอย่างจริงจัง', keys: ['weight', 'exercise', 'diet_sugar', 'diet_veg', 'follow_mets'] };
     } else if (a === 'Fatty Liver (NAFLD / MASLD)') {
       const subtype = state.assessSubtypes['Fatty Liver (NAFLD / MASLD)'] || 'none';
       assessTitle = 'ภาวะไขมันพอกตับ';
@@ -591,10 +643,20 @@ function buildPatientAdvice(asSet, drinksAlc, extra) {
     }
 
     if (assessTitle) assessmentItems.push(assessTitle);
-    if (adviceObj && !addedAdviceTitles.has(adviceObj.title)) {
-      addedAdviceTitles.add(adviceObj.title);
-      adviceItems.push(adviceObj);
-    }
+    if (adviceObj) pendingAdvice.push({ a, obj: adviceObj });
+  });
+
+  // รวมโรคกลุ่มเดียวกันเป็นหัวข้อเดียว ตำแหน่งตามโรคแรกของกลุ่มที่ปรากฏ
+  const emitted = new Set();
+  pendingAdvice.forEach(({ a, obj }) => {
+    const g = adviceGroupOf(a);
+    let merged;
+    if (g) {
+      if (emitted.has(g)) return;
+      emitted.add(g);
+      merged = mergeAdvice(g, pendingAdvice.filter(x => adviceGroupOf(x.a) === g).map(x => x.obj));
+    } else merged = obj;
+    if (!addedAdviceTitles.has(merged.title)) { addedAdviceTitles.add(merged.title); adviceItems.push(merged); }
   });
 
   // Lifestyle advice (แยก)
@@ -686,7 +748,7 @@ function copyPatientAdvice() {
     text += '- คำแนะนำ (Advice)\n';
     currentPatientAdviceItems.adviceItems.forEach(item => {
       text += `- ${item.title}\n`;
-      text += `  ${item.text}\n`;
+      item.text.split('\n').forEach(line => { text += `  ${line}\n`; });
       if (item.sub) {
         item.sub.split('\n').forEach(line => {
           text += `  ${line}\n`;
