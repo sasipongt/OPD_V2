@@ -559,8 +559,8 @@ function buildPatientAdvice(asSet, drinksAlc, extra) {
         ? { short: 'สงสัยเบาหวาน', title: assessTitle, text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงเข้าได้กับโรคเบาหวาน แต่ต้องตรวจซ้ำเพื่อยืนยันการวินิจฉัย', keys: ['diet_sugar', 'exercise', 'follow_dm_repeat'] }
         : { short: 'เบาหวาน', title: assessTitle, text: 'คุณมีระดับน้ำตาลในเลือดสูงซึ่งเข้าได้กับโรคเบาหวาน ควรควบคุมอาหารและติดตามอาการอย่างใกล้ชิด', keys: ['diet_sugar', 'diet_veg', 'exercise', 'follow_meds', 'follow_dm'] };
     } else if (a === 'IFG') {
-      assessTitle = 'ระดับน้ำตาลในเลือดสูงกว่าปกติ (ภาวะก่อนเบาหวาน)';
-      adviceObj = { short: 'ก่อนเบาหวาน', title: assessTitle, text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงกว่าปกติเล็กน้อย แต่ยังไม่ถึงเกณฑ์วินิจฉัยโรคเบาหวาน การปรับเปลี่ยนพฤติกรรมสามารถช่วยป้องกันการเกิดโรคเบาหวานได้', keys: ['diet_sugar', 'diet_veg', 'exercise', 'follow_dm'] };
+      assessTitle = 'น้ำตาลในเลือดสูงเสี่ยงโรคเบาหวาน';
+      adviceObj = { short: 'น้ำตาลในเลือดสูงเสี่ยงโรคเบาหวาน', title: assessTitle, text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงกว่าปกติเล็กน้อย แต่ยังไม่ถึงเกณฑ์วินิจฉัยโรคเบาหวาน การปรับเปลี่ยนพฤติกรรมสามารถช่วยป้องกันการเกิดโรคเบาหวานได้', keys: ['diet_sugar', 'diet_veg', 'exercise', 'follow_dm'] };
     } else if (a === 'Dyslipidemia') {
       assessTitle = 'ไขมันในเลือดสูง (คอเลสเตอรอล / LDL)';
       adviceObj = { short: 'ไขมันในเลือดสูง', title: assessTitle, text: 'ระดับไขมันคอเลสเตอรอลหรือ LDL (ไขมันไม่ดี) ในเลือดสูง ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด', keys: ['diet_veg', 'diet_fat', 'exercise', 'follow_lipid'] };
