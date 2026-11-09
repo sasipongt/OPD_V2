@@ -60,6 +60,12 @@ input[type=text]:focus,textarea:focus{
 .pf-group{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:0.75rem;margin-bottom:0.5rem;display:none}
 .pf-group .lbl{color:var(--blue);margin-bottom:8px}
 .pf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.plan-box{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:0.75rem;margin-bottom:0.5rem}
+.plan-box .lbl{color:var(--accent);display:flex;justify-content:space-between;align-items:center}
+.plan-box textarea,.op-row textarea{resize:vertical;line-height:1.6}
+.plan-reset{background:none;border:none;color:var(--text3);font-family:var(--mono);font-size:10px;cursor:pointer;text-transform:uppercase}
+.plan-reset:hover{color:var(--accent)}
+.op-row{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:0.75rem;margin-bottom:0.5rem;display:grid;gap:6px}
 .gen-btn{
   width:100%;background:var(--accent);border:none;border-radius:var(--r);
   padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;color:#000;
@@ -181,9 +187,11 @@ input[type=text]:focus,textarea:focus{
       <div class="iw"><label class="lbl">Common Problems Presets</label><div class="pill-row" id="row-as-presets"></div></div>
       <div class="subtype-container" id="subtype-container"><label class="lbl" id="subtype-lbl">Sub-classification:</label><div class="pill-row" id="row-subtypes"></div></div>
       <div id="preset-fields"></div>
+      <div id="plan-editors"></div>
+      <div class="iw"><label class="lbl">Other Problems (ไม่มีใน preset)</label><div id="other-problems"></div><button type="button" class="pill" onclick="addOtherProblem()">+ Add other problem</button></div>
       <div class="iw"><label class="lbl">1. Overall Status</label><input type="text" id="as-overall" placeholder="e.g., Healthy adult"/></div>
-      <div class="iw"><label class="lbl">2. New Findings</label><div style="display:flex;gap:10px"><button class="pill" id="btn-nf" onclick="toggleActive(this)">Select</button><input type="text" id="as-nf" placeholder="ระบุการค้นพบใหม่..." style="flex:1"/></div></div>
-      <div class="iw"><label class="lbl">3. Status of Existing PMH</label><div style="display:flex;gap:10px"><button class="pill" id="btn-spmh" onclick="toggleActive(this)">Select</button><input type="text" id="as-spmh" placeholder="e.g., Well-controlled HTN" style="flex:1"/></div></div>
+      <div class="iw"><label class="lbl">2. New Findings</label><input type="text" id="as-nf" placeholder="ระบุการค้นพบใหม่... (ถ้ามี)"/></div>
+      <div class="iw"><label class="lbl">3. Status of Existing PMH</label><input type="text" id="as-spmh" placeholder="e.g., Well-controlled HTN (ถ้ามี)"/></div>
       <div class="iw"><label class="lbl">4. Risk Stratification</label><input type="text" id="as-risk" placeholder="e.g., High cardiovascular risk..."/></div>
     </div>
 
@@ -251,7 +259,7 @@ let state = {
   pmh: 'none', sex: 'male',
   smoke: 'never', alc: 'none', ex: 'none',
   life: { diet: false, ex: false, weight: false }, img: {},
-  assessPresets: new Set(), assessSubtypes: {}
+  assessPresets: new Set(), assessSubtypes: {}, planText: {}
 };
 
 const IMG_LIST = ['CXR', 'US abdomen', 'MMG', 'CT Calcium score', 'BMD', 'ABI', 'EKG', 'EST', 'Fibroscan'];
@@ -262,7 +270,7 @@ const ASSESS_PRESETS = [
   'Dyslipidemia', 'Hypertriglyceridemia', 'Mixed Hyperlipidemia', 'Low HDL', 'IFG', 'DM', 
   'Hyperuricemia / Gout', 'Obesity', 'Overweight', 'Metabolic Syndrome', 
   'Fatty Liver (NAFLD / MASLD)', 'Elevated Liver Enzymes', 'Microscopic Hematuria', 
-  'Proteinuria', 'Asymptomatic Bacteriuria', 'Anemia', 'Eosinophilia', 'Leukopenia', 'Abnormal ECG'
+  'Proteinuria', 'CKD / Renal impairment', 'Asymptomatic Bacteriuria', 'Anemia', 'Polycythemia', 'Eosinophilia', 'Leukopenia', 'Thrombocytopenia', 'Abnormal ECG'
 ];
 
 // ช่องกรอกค่าที่ขึ้นเมื่อเลือก preset (กรอกเฉพาะค่าที่ผิดปกติ)
@@ -279,6 +287,9 @@ const PRESET_FIELDS = {
   'Microscopic Hematuria': [{id:'urbc',label:'Urine RBC',unit:'/HPF'}],
   'Proteinuria': [{id:'upro',label:'Urine Protein',unit:''}],
   'Asymptomatic Bacteriuria': [{id:'uwbc',label:'Urine WBC',unit:'/HPF'},{id:'ubact',label:'Bacteria',unit:''}],
+  'CKD / Renal impairment': [{id:'bun',label:'BUN',unit:'mg/dL'},{id:'cr',label:'Cr',unit:'mg/dL'},{id:'egfr',label:'eGFR',unit:'mL/min/1.73m²'}],
+  'Thrombocytopenia': [{id:'plt',label:'Platelet',unit:'/µL'}],
+  'Polycythemia': [{id:'hb',label:'Hb',unit:'g/dL'},{id:'hct',label:'Hct',unit:'%'}],
   'Anemia': [{id:'hb',label:'Hb',unit:'g/dL'},{id:'mcv',label:'MCV',unit:'fL'}],
   'Eosinophilia': [{id:'eos',label:'Eosinophil',unit:''}],
   'Leukopenia': [{id:'wbc',label:'WBC',unit:''}]
@@ -325,7 +336,8 @@ function getActiveSubtypeProblems() {
   return active;
 }
 
-function renderSubtypes() {
+function renderSubtypes() { renderSubtypesInner(); renderPlanEditors(); }
+function renderSubtypesInner() {
   const container = document.getElementById('subtype-container');
   const lbl = document.getElementById('subtype-lbl');
   const row = document.getElementById('row-subtypes');
@@ -370,7 +382,7 @@ const updateAssessPresets = () => {
   ASSESS_PRESETS.forEach(p => {
     const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pill' + (state.assessPresets.has(p) ? ' sel' : ''); btn.textContent = p;
     btn.onclick = () => {
-      if(state.assessPresets.has(p)) { state.assessPresets.delete(p); if (SUBTYPE_OPTIONS[p]) state.assessSubtypes[p] = 'none'; }
+      if(state.assessPresets.has(p)) { state.assessPresets.delete(p); delete state.planText[p]; delete state.planText['Mixed Hyperlipidemia']; if (SUBTYPE_OPTIONS[p]) state.assessSubtypes[p] = 'none'; }
       else state.assessPresets.add(p);
       syncPresetField(p); updateAssessPresets(); renderSubtypes();
     }; c.appendChild(btn);
@@ -378,21 +390,21 @@ const updateAssessPresets = () => {
 };
 
 const updatePMH = (val) => { state.pmh = val; document.getElementById('in-pmh').style.display = val === 'known' ? 'block' : 'none'; renderRadioGroup('row-pmh', [{val:'none', label:'No underlying disease'}, {val:'known', label:'Known cases of...'}], state.pmh, updatePMH); };
-const updateSex = (val) => { state.sex = val; renderRadioGroup('row-sex', [{val:'male', label:'Male'}, {val:'female', label:'Female'}], state.sex, updateSex); };
+const updateSex = (val) => { state.sex = val; renderPlanEditors(); renderRadioGroup('row-sex', [{val:'male', label:'Male'}, {val:'female', label:'Female'}], state.sex, updateSex); };
 const updateSmoke = (val) => { state.smoke = val; document.getElementById('in-smoke').style.display = (val === 'ex' || val === 'current') ? 'block' : 'none'; renderRadioGroup('row-smoke', [{val:'never', label:'Never'}, {val:'ex', label:'Ex-smoker'}, {val:'current', label:'Current'}], state.smoke, updateSmoke); };
-const updateAlc = (val) => { state.alc = val; document.getElementById('in-alc').style.display = val === 'freq' ? 'block' : 'none'; renderRadioGroup('row-alc', [{val:'none', label:'None'}, {val:'occ', label:'Occasional'}, {val:'freq', label:'Frequent'}], state.alc, updateAlc); };
+const updateAlc = (val) => { state.alc = val; renderPlanEditors(); document.getElementById('in-alc').style.display = val === 'freq' ? 'block' : 'none'; renderRadioGroup('row-alc', [{val:'none', label:'None'}, {val:'occ', label:'Occasional'}, {val:'freq', label:'Frequent'}], state.alc, updateAlc); };
 const updateEx = (val) => { state.ex = val; renderRadioGroup('row-ex', [{val:'none', label:'None'}, {val:'<150', label:'<150 min/wk'}, {val:'>=150', label:'≥150 min/wk (Moderate-Vigorous)'}], state.ex, updateEx); };
 const updateLife = () => { renderCheckboxGroup('row-life', [{val:'diet', label:'Diet (e.g., Low salt, Low fat, Diabetic diet)'}, {val:'ex', label:'Exercise (Recommend ≥150 min/wk aerobic + resistance)'}, {val:'weight', label:'Weight management / Stop smoking or alcohol'}], state.life, updateLife); };
 
 const initImaging = () => {
   const cont = document.getElementById('img-inputs-container');
-  IMG_LIST.forEach(k => { const safeK = k.replace(/\s+/g, ''); const div = document.createElement('div'); div.className = 'iw'; div.id = 'img-div-' + safeK; div.style.display = 'none'; div.style.marginBottom = '6px'; div.innerHTML = `<label class="lbl">${k}</label><input type="text" id="img-in-${safeK}" placeholder="ผลตรวจ ${k}..."/>`; cont.appendChild(div); });
+  IMG_LIST.forEach(k => { const safeK = k.replace(/\s+/g, ''); const div = document.createElement('div'); div.className = 'iw'; div.id = 'img-div-' + safeK; div.style.display = 'none'; div.style.marginBottom = '6px'; div.innerHTML = `<label class="lbl">${k}</label><input type="text" id="img-in-${safeK}" placeholder="ผลตรวจ ${k}..."/><textarea id="img-plan-${safeK}" rows="2" placeholder="Plan ถ้าผิดปกติ (เว้นว่างถ้าปกติ) — ถ้ากรอก จะนำไปใส่ใน Assessment & Plan" style="margin-top:4px"></textarea>`; cont.appendChild(div); });
 };
 const updateImgSel = () => {
   const c = document.getElementById('row-img-sel'); c.innerHTML = '';
   IMG_LIST.forEach(k => {
     const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'pill' + (state.img[k] ? ' sel' : ''); btn.textContent = k;
-    btn.onclick = () => { state.img[k] = !state.img[k]; const safeK = k.replace(/\s+/g, ''); const div = document.getElementById('img-div-' + safeK); if(div) div.style.display = state.img[k] ? 'block' : 'none'; if(!state.img[k]) document.getElementById('img-in-'+safeK).value = ''; updateImgSel(); }; c.appendChild(btn);
+    btn.onclick = () => { state.img[k] = !state.img[k]; const safeK = k.replace(/\s+/g, ''); const div = document.getElementById('img-div-' + safeK); if(div) div.style.display = state.img[k] ? 'block' : 'none'; if(!state.img[k]) { document.getElementById('img-in-'+safeK).value = ''; document.getElementById('img-plan-'+safeK).value = ''; } updateImgSel(); }; c.appendChild(btn);
   });
 };
 
@@ -402,8 +414,80 @@ function getSubtypeLabel(problemKey, subtypeVal) {
   return opt ? ` (${opt.label})` : '';
 }
 
+// ===== Plan (สร้างเป็นค่าเริ่มต้น แล้วให้แก้ไขได้ในฟอร์ม) =====
+function planFor(a) {
+  const drinksAlc = (state.alc === 'occ' || state.alc === 'freq');
+  let pLines = []; let displayTitle = a;
+    if (a === 'DM') { const dmSub = state.assessSubtypes['DM'] || 'none'; displayTitle = 'DM' + getSubtypeLabel('DM', dmSub); if (dmSub === 'suspected') pLines.push('- Repeat FBS and/or HbA1c to confirm diagnosis.'); pLines.push('- Dietary modification: limit starchy foods, sweets and sweet fruits; adhere to prescribed medications (if any) and follow up regularly.'); }
+    else if (a === 'IFG') { pLines.push('- Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
+    else if (a === 'Dyslipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
+    else if (a === 'Low HDL') { pLines.push('- Increase aerobic physical activity (≥150 min/week), smoking cessation if applicable, weight control.'); pLines.push('- Replace refined carbohydrates with unsaturated fats (olive oil, fish, nuts).'); }
+    else if (a === 'Hypertriglyceridemia') { pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.'); pLines.push('- Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); }
+    else if (a === 'Mixed Hyperlipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC): reduce saturated and trans fats, increase vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose); increase omega-3 fatty acids (fatty fish); emphasize Mediterranean diet.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); pLines.push('- Consider pharmacotherapy (e.g., statin ± fibrate) if lifestyle modification is insufficient; recheck lipid profile in 3-6 months.'); }
+    else if (a === 'Hyperuricemia / Gout') { pLines.push(`- Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages${drinksAlc ? ', and alcohol (especially beer and spirits)' : ''}. Encourage low-fat dairy products and vegetable consumption.`); pLines.push('- Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.'); }
+    else if (a === 'Obesity') { pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.'); pLines.push('- Caloric deficit of 500–750 kcal/day.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Consider anti-obesity pharmacotherapy if indicated (e.g., BMI ≥30 or ≥27 with comorbidities).'); }
+    else if (a === 'Overweight') { pLines.push('- Weight Loss Targets: Aim for 5–10% of total body weight reduction over 6 months if comorbidities are present.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Caloric deficit of 500–750 kcal/day.'); }
+    else if (a === 'Metabolic Syndrome') { pLines.push('- Comprehensive lifestyle intervention to address all components of metabolic syndrome.'); pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Monitor and manage individual components: hyperglycemia, dyslipidemia, and hypertension.'); }
+    else if (a === 'Elevated Liver Enzymes') { pLines.push(`- Investigate etiology: ${drinksAlc ? 'alcohol use, ' : ''}viral hepatitis, medications, fatty liver.`); pLines.push(`- Avoid hepatotoxic medications${drinksAlc ? ' and alcohol' : ''}.`); pLines.push('- Repeat LFT in 4-8 weeks.'); pLines.push('- Refer if persistently elevated or >3x ULN.'); }
+    else if (a === 'Fatty Liver (NAFLD / MASLD)') { const subtype = state.assessSubtypes['Fatty Liver (NAFLD / MASLD)'] || 'none'; displayTitle = 'Fatty Liver (NAFLD / MASLD)' + getSubtypeLabel('Fatty Liver (NAFLD / MASLD)', subtype); pLines.push('- Diet: Recommend hypocaloric diet (500–1000 kcal deficit/day) / Mediterranean diet (high in mono- and polyunsaturated fats, vegetables, legumes, fish; low in refined carbohydrates, fructose, and red/processed meats). Avoid sugar-sweetened beverages and high-fructose corn syrup.'); pLines.push('- Weight reduction ≥10% of body weight.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity + resistance training.'); if (drinksAlc) pLines.push('- Alcohol abstinence.'); if (subtype === 'severe') { pLines.push('- Refer to Gastroenterologist/Hepatologist for further evaluation.'); pLines.push('- Consider Fibroscan or liver biopsy to assess fibrosis stage.'); pLines.push('- Repeat LFT and Ultrasound liver in 3-6 months.'); } else if (subtype === 'moderate') { pLines.push('- Repeat LFT and Ultrasound liver in 6 months.'); } else { pLines.push('- Follow-up Ultrasound liver in 6-12 months.'); } }
+    else if (a === 'Anemia') { const subtype = state.assessSubtypes['Anemia'] || 'none'; displayTitle = 'Anemia' + getSubtypeLabel('Anemia', subtype); pLines.push('- Evaluate for underlying causes: nutritional deficiency, chronic disease, blood loss, hemolysis, bone marrow disorders.'); if (subtype === 'microcytic') { pLines.push('- Likely Iron Deficiency Anemia: Check serum ferritin, serum iron, TIBC.'); pLines.push('- Investigate source of blood loss (GI endoscopy/colonoscopy if indicated, especially in men and postmenopausal women).'); pLines.push('- Consider trial of oral iron supplementation (e.g., ferrous sulfate 325 mg daily) with follow-up CBC in 4-8 weeks.'); pLines.push('- If thalassemia suspected (based on ethnicity/family history), check hemoglobin electrophoresis.'); } else if (subtype === 'normocytic') { pLines.push('- Consider Anemia of Chronic Disease, early iron deficiency, chronic kidney disease, or mixed etiology.'); pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, BUN/Cr.'); pLines.push('- If no obvious cause, consider referral to hematologist for further evaluation.'); } else if (subtype === 'macrocytic') { pLines.push('- Check vitamin B12 and folate levels.'); pLines.push('- Evaluate for alcohol use, liver disease, hypothyroidism, or medication-induced causes.'); pLines.push('- If B12/folate deficiency confirmed, initiate replacement therapy and monitor response.'); } else { pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, vitamin B12, and folate levels.'); pLines.push('- Further workup guided by MCV and clinical context.'); } }
+    else if (a === 'Microscopic Hematuria') { pLines.push('- Repeat UA in 48–72 hours after resolving benign transient causes.'); pLines.push('- Refer urologist if UA still shows microscopic hematuria.'); }
+    else if (a === 'Asymptomatic Bacteriuria') { if (state.sex === 'female') { pLines.push('- Asymptomatic (no dysuria, frequency, urgency, suprapubic pain, flank pain, or fever).'); pLines.push('- No antibiotic treatment required if non-pregnant; if pregnant, treat per ANC guideline.'); } else { pLines.push('- Asymptomatic bacteriuria in a male is uncommon: repeat UA ± urine culture and evaluate for underlying urologic cause.'); } }
+    else if (a === 'Proteinuria') { pLines.push('- Recheck UA next 1-2 weeks.'); }
+    else if (a === 'CKD / Renal impairment') { pLines.push('- Repeat creatinine/eGFR and urinalysis ± urine albumin-creatinine ratio in 3 months to confirm chronicity.'); pLines.push('- Avoid nephrotoxic agents (NSAIDs, herbal/unregulated medications); adjust renally cleared drugs.'); pLines.push('- Optimize BP and glycemic control; reduce sodium intake.'); pLines.push('- Refer to nephrologist if eGFR <30, rapid decline, or significant albuminuria/hematuria.'); }
+    else if (a === 'Thrombocytopenia') { pLines.push('- Repeat CBC with peripheral blood smear to exclude pseudothrombocytopenia (EDTA clumping).'); pLines.push(`- Review medications${drinksAlc ? ', alcohol use' : ''}; evaluate for liver disease; consider HBV/HCV/HIV testing if indicated.`); pLines.push('- Avoid aspirin/NSAIDs unless prescribed.'); pLines.push('- Refer to hematologist if persistently <100,000/µL, rapidly falling, accompanied by other cytopenias, or any bleeding.'); }
+    else if (a === 'Polycythemia') { pLines.push('- Repeat CBC with adequate hydration; check Hct.'); pLines.push('- Evaluate secondary causes: smoking, hypoxia/OSA, dehydration, testosterone or other medications.'); pLines.push('- If persistent: check serum erythropoietin and JAK2 V617F; refer to hematologist.'); pLines.push('- Smoking cessation and adequate hydration.'); }
+  return { title: displayTitle, lines: pLines };
+}
+function effectiveSet() {
+  const set = new Set(state.assessPresets);
+  if (set.has('Dyslipidemia') && set.has('Hypertriglyceridemia')) { set.delete('Dyslipidemia'); set.delete('Hypertriglyceridemia'); set.add('Mixed Hyperlipidemia'); }
+  return set;
+}
+function planLines(a) {
+  const st = state.planText[a];
+  const text = (st && st.edited) ? st.text : planFor(a).lines.join('\n');
+  return text.split('\n').map(x => x.trim()).filter(Boolean);
+}
+function renderPlanEditors() {
+  const c = document.getElementById('plan-editors'); if (!c) return; c.innerHTML = '';
+  effectiveSet().forEach(a => {
+    const pl = planFor(a), st = state.planText[a], edited = !!(st && st.edited);
+    const box = document.createElement('div'); box.className = 'plan-box';
+    const lbl = document.createElement('label'); lbl.className = 'lbl';
+    const name = document.createElement('span'); name.textContent = 'Plan — ' + pl.title; lbl.appendChild(name);
+    if (edited) { const r = document.createElement('button'); r.type = 'button'; r.className = 'plan-reset'; r.textContent = 'Reset'; r.onclick = () => { delete state.planText[a]; renderPlanEditors(); }; lbl.appendChild(r); }
+    const ta = document.createElement('textarea'); ta.value = edited ? st.text : pl.lines.join('\n');
+    ta.rows = Math.min(12, Math.max(3, ta.value.split('\n').length + 1));
+    ta.oninput = () => { state.planText[a] = { edited: true, text: ta.value }; };
+    box.appendChild(lbl); box.appendChild(ta); c.appendChild(box);
+  });
+}
+
+// ===== Other problems =====
+function addOtherProblem() {
+  const row = document.createElement('div'); row.className = 'op-row';
+  const mk = (tag, cls, ph, rows) => { const e = document.createElement(tag); if (tag === 'input') e.type = 'text'; if (rows) e.rows = rows; e.placeholder = ph; e.className = cls; return e; };
+  const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'plan-reset'; rm.style.textAlign = 'right'; rm.textContent = '✕ Remove'; rm.onclick = () => row.remove();
+  row.appendChild(mk('input', 'op-name', 'Problem / Diagnosis'));
+  row.appendChild(mk('input', 'op-finding', 'Finding (ค่าตรวจ/ผลที่พบ)'));
+  row.appendChild(mk('textarea', 'op-plan', 'Plan (1 บรรทัดต่อ 1 ข้อ)', 3));
+  row.appendChild(mk('textarea', 'op-advice', 'คำแนะนำผู้ป่วย (ไม่บังคับ — ถ้ากรอกจะแสดงในแท็บคำแนะนำผู้ป่วย)', 2));
+  row.appendChild(rm);
+  document.getElementById('other-problems').appendChild(row);
+}
+function getOtherProblems() {
+  const bullet = x => x.startsWith('-') ? x : '- ' + x;
+  return [...document.querySelectorAll('#other-problems .op-row')].map(r => ({
+    name: r.querySelector('.op-name').value.trim(),
+    finding: r.querySelector('.op-finding').value.trim(),
+    plans: r.querySelector('.op-plan').value.split('\n').map(x => x.trim()).filter(Boolean).map(bullet),
+    advice: r.querySelector('.op-advice').value.trim()
+  })).filter(o => o.name);
+}
+
 // ==================== BUILD PATIENT ADVICE (แยก Assessment กับ คำแนะนำ) ====================
-function buildPatientAdvice(asSet, drinksAlc) {
+function buildPatientAdvice(asSet, drinksAlc, extra) {
   currentPatientAdviceItems = [];
   const assessmentItems = [];
   const adviceItems = [];
@@ -495,6 +579,15 @@ function buildPatientAdvice(asSet, drinksAlc) {
     } else if (a === 'Abnormal ECG') {
       assessTitle = 'ตรวจพบคลื่นไฟฟ้าหัวใจผิดปกติ';
       adviceObj = { title: 'ตรวจพบคลื่นไฟฟ้าหัวใจผิดปกติ', text: 'ผลตรวจคลื่นไฟฟ้าหัวใจ (EKG) พบความผิดปกติ ซึ่งอาจต้องได้รับการตรวจเพิ่มเติมเพื่อประเมินการทำงานของหัวใจ', sub: '- แพทย์จะพิจารณาส่งตรวจเพิ่มเติม เช่น การตรวจหัวใจด้วยคลื่นเสียงสะท้อน (Echocardiogram) หรือการเดินสายพาน (EST)\n- หากมีอาการเจ็บหน้าอก ใจสั่น หรือเหนื่อยง่าย ควรรีบพบแพทย์', warn: 'ควรพบแพทย์เพื่อประเมินผลตรวจและวางแผนการตรวจรักษาต่อไป' };
+    } else if (a === 'CKD / Renal impairment') {
+      assessTitle = 'การทำงานของไตลดลง';
+      adviceObj = { title: assessTitle, text: 'ผลตรวจพบการทำงานของไตต่ำกว่าเกณฑ์ ซึ่งต้องตรวจซ้ำเพื่อยืนยันว่าเป็นความผิดปกติต่อเนื่อง', sub: '- ตรวจเลือดและปัสสาวะซ้ำตามที่แพทย์นัด\n- หลีกเลี่ยงยาแก้ปวดกลุ่ม NSAIDs (เช่น ไอบูโพรเฟน ไดโคลฟีแนก) และสมุนไพรหรือยาชุดที่ไม่ทราบส่วนประกอบ\n- ลดอาหารเค็ม และควบคุมความดันโลหิตและน้ำตาลในเลือด\n- ดื่มน้ำให้เพียงพอ ยกเว้นแพทย์จำกัดน้ำ', warn: 'หากมีอาการบวม ปัสสาวะลดลงหรือเป็นฟอง ควรพบแพทย์' };
+    } else if (a === 'Thrombocytopenia') {
+      assessTitle = 'เกล็ดเลือดต่ำ';
+      adviceObj = { title: assessTitle, text: 'ตรวจพบระดับเกล็ดเลือดต่ำกว่าปกติ ซึ่งอาจเกิดจากหลายสาเหตุ แพทย์จะนัดตรวจเลือดซ้ำเพื่อยืนยัน', sub: '- ตรวจเลือดซ้ำตามนัด\n- หลีกเลี่ยงยาแอสไพริน และยาแก้ปวดกลุ่ม NSAIDs เว้นแต่แพทย์สั่ง\n- หลีกเลี่ยงการดื่มแอลกอฮอล์\n- ระวังการกระทบกระแทกรุนแรง', warn: 'หากมีจ้ำเลือด เลือดออกตามไรฟัน เลือดกำเดา หรือถ่ายดำ ให้รีบพบแพทย์' };
+    } else if (a === 'Polycythemia') {
+      assessTitle = 'เม็ดเลือดแดงสูง / เลือดข้น';
+      adviceObj = { title: assessTitle, text: 'ตรวจพบระดับฮีโมโกลบินหรือฮีมาโตคริตสูงกว่าปกติ ซึ่งอาจเกิดจากการขาดน้ำ การสูบบุหรี่ ภาวะหยุดหายใจขณะหลับ หรือสาเหตุอื่นๆ', sub: '- ดื่มน้ำให้เพียงพอ\n- งดสูบบุหรี่\n- ตรวจเลือดซ้ำตามนัด\n- แจ้งแพทย์หากมีอาการนอนกรนหรือง่วงมากตอนกลางวัน', warn: 'หากมีปวดศีรษะรุนแรง เวียนศีรษะ มองเห็นผิดปกติ หรือคันตามตัวหลังอาบน้ำอุ่น ควรพบแพทย์' };
     }
 
     if (assessTitle) assessmentItems.push(assessTitle);
@@ -521,10 +614,19 @@ function buildPatientAdvice(asSet, drinksAlc) {
     adviceItems.push({ title: 'การเลิกบุหรี่', text: 'การสูบบุหรี่เพิ่มความเสี่ยงต่อโรคหัวใจ มะเร็งปอด และโรคเรื้อรังอื่นๆ อย่างมีนัยสำคัญ', sub: '- ปรึกษาแพทย์เพื่อขอคำแนะนำในการเลิกบุหรี่\n- มีบริการให้คำปรึกษาและยาช่วยเลิกบุหรี่', warn: 'การเลิกบุหรี่เป็นการเปลี่ยนแปลงที่ส่งผลดีต่อสุขภาพมากที่สุดอย่างหนึ่ง' });
   }
 
+  ((extra && extra.imgAbn) || []).forEach(x => {
+    assessmentItems.push('ผลตรวจ ' + x.k + ' ผิดปกติ');
+    adviceItems.push({ title: 'ผลตรวจ ' + x.k + ' ผิดปกติ', text: 'แพทย์จะประเมินผลเพิ่มเติม และอาจนัดตรวจหรือส่งต่อผู้เชี่ยวชาญตามความเหมาะสม' });
+  });
+  ((extra && extra.others) || []).forEach(o => {
+    assessmentItems.push(o.name);
+    if (o.advice) adviceItems.push({ title: o.name, text: o.advice });
+  });
   currentPatientAdviceItems = { assessmentItems, adviceItems };
   return currentPatientAdviceItems;
 }
 
+const esc = (v) => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function renderPatientAdvice(data) {
   const container = document.getElementById('patient-advice-content');
   if (!data || (data.assessmentItems.length === 0 && data.adviceItems.length === 0)) {
@@ -538,7 +640,7 @@ function renderPatientAdvice(data) {
   if (data.assessmentItems.length > 0) {
     html += '<div class="advice-section"><div class="advice-section-title"># สิ่งที่ตรวจพบ (Assessment)</div>';
     data.assessmentItems.forEach((item, i) => {
-      html += `<div class="advice-block"><div class="advice-title">#${i + 1}. ${item}</div></div>`;
+      html += `<div class="advice-block"><div class="advice-title">#${i + 1}. ${esc(item)}</div></div>`;
     });
     html += '</div>';
   }
@@ -548,13 +650,13 @@ function renderPatientAdvice(data) {
     html += '<div class="advice-section"><div class="advice-section-title">- คำแนะนำ (Advice)</div>';
     data.adviceItems.forEach((item, i) => {
       html += `<div class="advice-block">
-        <div class="advice-title">- ${item.title}</div>
-        <div class="advice-text">${item.text}</div>`;
+        <div class="advice-title">- ${esc(item.title)}</div>
+        <div class="advice-text">${esc(item.text).replace(/\n/g, '<br>')}</div>`;
       if (item.sub) {
-        html += `<div class="advice-sub">${item.sub.replace(/\n/g, '<br>')}</div>`;
+        html += `<div class="advice-sub">${esc(item.sub).replace(/\n/g, '<br>')}</div>`;
       }
       if (item.warn) {
-        html += `<div class="advice-warn"><div class="advice-title">คำแนะนำเพิ่มเติม</div><div class="advice-text">${item.warn}</div></div>`;
+        html += `<div class="advice-warn"><div class="advice-title">คำแนะนำเพิ่มเติม</div><div class="advice-text">${esc(item.warn)}</div></div>`;
       }
       html += `</div>`;
     });
@@ -627,9 +729,7 @@ function generateOutput() {
   const meds = getVal('in-meds'); if (meds) text += `Current Medications / Supplements: ${meds}\n`;
   text += '\n';
 
-  let asSet = new Set(state.assessPresets);
-  // Dyslipidemia + Hypertriglyceridemia => Mixed Hyperlipidemia
-  if (asSet.has('Dyslipidemia') && asSet.has('Hypertriglyceridemia')) { asSet.delete('Dyslipidemia'); asSet.delete('Hypertriglyceridemia'); asSet.add('Mixed Hyperlipidemia'); }
+  const asSet = effectiveSet(); // รวม Dyslipidemia + Hypertriglyceridemia เป็น Mixed
 
   // ค่าที่กรอกในแต่ละ preset -> "LDL: 150 mg/dL / TG: 200 mg/dL" (รวมหลาย preset ได้ ตัดชื่อซ้ำ)
   const fieldVals = (keys) => {
@@ -646,8 +746,20 @@ function generateOutput() {
 
   // Imaging ที่ถูกนำไปแสดงใน Assessment แล้ว ไม่ต้องซ้ำใน Investigation Results
   let invLines = [];
+  // Imaging ที่ผิดปกติและมี plan: ถ้ามี preset ที่ใช้ผลนี้อยู่แล้ว ต่อ plan เข้า preset นั้น ไม่เช่นนั้นสร้างเป็น Abnormal <ชื่อ> ใน Assessment
+  const imgExtraPlan = {}, imgAbn = [];
+  IMG_LIST.forEach(k => {
+    if (!state.img[k]) return;
+    const raw = getVal('img-plan-' + k.replace(/\s+/g, '')); if (!raw) return;
+    const lines = raw.split('\n').map(x => x.trim()).filter(Boolean).map(x => x.startsWith('-') ? x : '- ' + x);
+    if (k === 'US abdomen' && asSet.has('Fatty Liver (NAFLD / MASLD)')) imgExtraPlan['Fatty Liver (NAFLD / MASLD)'] = lines;
+    else if (k === 'EKG' && asSet.has('Abnormal ECG')) imgExtraPlan['Abnormal ECG'] = lines;
+    else imgAbn.push({ k, lines });
+  });
+  const imgAbnSet = new Set(imgAbn.map(x => x.k));
   IMG_LIST.forEach(k => {
     if (!imgLines[k]) return;
+    if (imgAbnSet.has(k)) return;
     if (k === 'US abdomen' && asSet.has('Fatty Liver (NAFLD / MASLD)')) return;
     if (k === 'EKG' && asSet.has('Abnormal ECG')) return;
     invLines.push(imgLines[k]);
@@ -663,31 +775,18 @@ function generateOutput() {
 
   let assessPlanList = [];
   const overall = getVal('as-overall'); if (overall) assessPlanList.push({ title: `Overall Status: ${overall}`, plans: [] });
-  const nf = getVal('as-nf'); if (getSel('btn-nf') && nf) assessPlanList.push({ title: `New Findings: ${nf}`, plans: [] });
-  const spmh = getVal('as-spmh'); if (getSel('btn-spmh') && spmh) assessPlanList.push({ title: `Status of Existing PMH: ${spmh}`, plans: [] });
+  const nf = getVal('as-nf'); if (nf) assessPlanList.push({ title: `New Findings: ${nf}`, plans: [] });
+  const spmh = getVal('as-spmh'); if (spmh) assessPlanList.push({ title: `Status of Existing PMH: ${spmh}`, plans: [] });
   const risk = getVal('as-risk'); if (risk) assessPlanList.push({ title: `Risk Stratification: ${risk}`, plans: [] });
   const drinksAlc = (state.alc === 'occ' || state.alc === 'freq');
 
   asSet.forEach(a => {
-    let pLines = []; let displayTitle = a;
-    if (a === 'DM') { const dmSub = state.assessSubtypes['DM'] || 'none'; displayTitle = 'DM' + getSubtypeLabel('DM', dmSub); if (dmSub === 'suspected') pLines.push('- Repeat FBS and/or HbA1c to confirm diagnosis.'); pLines.push('- แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ'); }
-    else if (a === 'IFG') { pLines.push('- Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
-    else if (a === 'Dyslipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
-    else if (a === 'Low HDL') { pLines.push('- Increase aerobic physical activity (≥150 min/week), smoking cessation if applicable, weight control.'); pLines.push('- Replace refined carbohydrates with unsaturated fats (olive oil, fish, nuts).'); }
-    else if (a === 'Hypertriglyceridemia') { pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.'); pLines.push('- Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); }
-    else if (a === 'Mixed Hyperlipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC): reduce saturated and trans fats, increase vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose); increase omega-3 fatty acids (fatty fish); emphasize Mediterranean diet.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); pLines.push('- Consider pharmacotherapy (e.g., statin ± fibrate) if lifestyle modification is insufficient; recheck lipid profile in 3-6 months.'); }
-    else if (a === 'Hyperuricemia / Gout') { pLines.push(`- Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages${drinksAlc ? ', and alcohol (especially beer and spirits)' : ''}. Encourage low-fat dairy products and vegetable consumption.`); pLines.push('- Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.'); }
-    else if (a === 'Obesity') { pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.'); pLines.push('- Caloric deficit of 500–750 kcal/day.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Consider anti-obesity pharmacotherapy if indicated (e.g., BMI ≥30 or ≥27 with comorbidities).'); }
-    else if (a === 'Overweight') { pLines.push('- Weight Loss Targets: Aim for 5–10% of total body weight reduction over 6 months if comorbidities are present.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Caloric deficit of 500–750 kcal/day.'); }
-    else if (a === 'Metabolic Syndrome') { pLines.push('- Comprehensive lifestyle intervention to address all components of metabolic syndrome.'); pLines.push('- Weight Loss Targets: Initial Goal: 5–10% of total body weight reduction over 6 months.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Monitor and manage individual components: hyperglycemia, dyslipidemia, and hypertension.'); }
-    else if (a === 'Elevated Liver Enzymes') { pLines.push(`- Investigate etiology: ${drinksAlc ? 'alcohol use, ' : ''}viral hepatitis, medications, fatty liver.`); pLines.push(`- Avoid hepatotoxic medications${drinksAlc ? ' and alcohol' : ''}.`); pLines.push('- Repeat LFT in 4-8 weeks.'); pLines.push('- Refer if persistently elevated or >3x ULN.'); }
-    else if (a === 'Fatty Liver (NAFLD / MASLD)') { const subtype = state.assessSubtypes['Fatty Liver (NAFLD / MASLD)'] || 'none'; displayTitle = 'Fatty Liver (NAFLD / MASLD)' + getSubtypeLabel('Fatty Liver (NAFLD / MASLD)', subtype); pLines.push('- Diet: Recommend hypocaloric diet (500–1000 kcal deficit/day) / Mediterranean diet (high in mono- and polyunsaturated fats, vegetables, legumes, fish; low in refined carbohydrates, fructose, and red/processed meats). Avoid sugar-sweetened beverages and high-fructose corn syrup.'); pLines.push('- Weight reduction ≥10% of body weight.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity + resistance training.'); if (drinksAlc) pLines.push('- Alcohol abstinence.'); if (subtype === 'severe') { pLines.push('- Refer to Gastroenterologist/Hepatologist for further evaluation.'); pLines.push('- Consider Fibroscan or liver biopsy to assess fibrosis stage.'); pLines.push('- Repeat LFT and Ultrasound liver in 3-6 months.'); } else if (subtype === 'moderate') { pLines.push('- Repeat LFT and Ultrasound liver in 6 months.'); } else { pLines.push('- Follow-up Ultrasound liver in 6-12 months.'); } }
-    else if (a === 'Anemia') { const subtype = state.assessSubtypes['Anemia'] || 'none'; displayTitle = 'Anemia' + getSubtypeLabel('Anemia', subtype); pLines.push('- Evaluate for underlying causes: nutritional deficiency, chronic disease, blood loss, hemolysis, bone marrow disorders.'); if (subtype === 'microcytic') { pLines.push('- Likely Iron Deficiency Anemia: Check serum ferritin, serum iron, TIBC.'); pLines.push('- Investigate source of blood loss (GI endoscopy/colonoscopy if indicated, especially in men and postmenopausal women).'); pLines.push('- Consider trial of oral iron supplementation (e.g., ferrous sulfate 325 mg daily) with follow-up CBC in 4-8 weeks.'); pLines.push('- If thalassemia suspected (based on ethnicity/family history), check hemoglobin electrophoresis.'); } else if (subtype === 'normocytic') { pLines.push('- Consider Anemia of Chronic Disease, early iron deficiency, chronic kidney disease, or mixed etiology.'); pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, BUN/Cr.'); pLines.push('- If no obvious cause, consider referral to hematologist for further evaluation.'); } else if (subtype === 'macrocytic') { pLines.push('- Check vitamin B12 and folate levels.'); pLines.push('- Evaluate for alcohol use, liver disease, hypothyroidism, or medication-induced causes.'); pLines.push('- If B12/folate deficiency confirmed, initiate replacement therapy and monitor response.'); } else { pLines.push('- Check reticulocyte count, serum ferritin, serum iron, TIBC, vitamin B12, and folate levels.'); pLines.push('- Further workup guided by MCV and clinical context.'); } }
-    else if (a === 'Microscopic Hematuria') { pLines.push('- Repeat UA in 48–72 hours after resolving benign transient causes.'); pLines.push('- Refer urologist if UA still shows microscopic hematuria.'); }
-    else if (a === 'Asymptomatic Bacteriuria') { if (state.sex === 'female') { pLines.push('- Asymptomatic (no dysuria, frequency, urgency, suprapubic pain, flank pain, or fever).'); pLines.push('- No antibiotic treatment required if non-pregnant; if pregnant, treat per ANC guideline.'); } else { pLines.push('- Asymptomatic bacteriuria in a male is uncommon: repeat UA ± urine culture and evaluate for underlying urologic cause.'); } }
-    else if (a === 'Proteinuria') { pLines.push('- Recheck UA next 1-2 weeks.'); }
-    assessPlanList.push({ title: displayTitle, plans: pLines, finding: findingFor(a) });
+    const pl = planFor(a);
+    assessPlanList.push({ title: pl.title, plans: planLines(a).concat(imgExtraPlan[a] || []), finding: findingFor(a) });
   });
+  imgAbn.forEach(x => assessPlanList.push({ title: 'Abnormal ' + x.k, plans: x.lines, finding: imgLines[x.k] || '' }));
+  const otherProblems = getOtherProblems();
+  otherProblems.forEach(o => assessPlanList.push({ title: o.name, plans: o.plans, finding: o.finding }));
 
   if (assessPlanList.length > 0) { text += `Assessment and Plan\n`; assessPlanList.forEach((item, i) => { text += `${i + 1}. ${item.title}\n`; if (item.finding) { text += `   Finding: ${item.finding}\n`; } if (item.plans.length > 0) { text += `   Plan\n`; item.plans.forEach(p => { text += `   ${p}\n`; }); } }); text += '\n'; }
 
@@ -707,7 +806,7 @@ function generateOutput() {
   document.getElementById('out-text').textContent = text.trim();
   
   // Build patient advice
-  const adviceData = buildPatientAdvice(asSet, drinksAlc);
+  const adviceData = buildPatientAdvice(asSet, drinksAlc, { others: otherProblems, imgAbn });
   renderPatientAdvice(adviceData);
   
   document.getElementById('view-form').style.display = 'none';
