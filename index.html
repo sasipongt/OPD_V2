@@ -57,6 +57,9 @@ input[type=text]:focus,textarea:focus{
   padding:0.75rem;margin-top:0.5rem;display:none;
 }
 .subtype-container .lbl{color:var(--yellow);margin-bottom:8px}
+.pf-group{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:0.75rem;margin-bottom:0.5rem;display:none}
+.pf-group .lbl{color:var(--blue);margin-bottom:8px}
+.pf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
 .gen-btn{
   width:100%;background:var(--accent);border:none;border-radius:var(--r);
   padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;color:#000;
@@ -170,20 +173,14 @@ input[type=text]:focus,textarea:focus{
 
     <div class="sec">
       <div class="sec-lbl">Investigation Results</div>
-      <div class="iw"><label class="lbl">CBC</label><div class="g4"><input type="text" id="lab-hb" inputmode="decimal" placeholder="Hb"/><input type="text" id="lab-wbc" inputmode="decimal" placeholder="WBC"/><input type="text" id="lab-eos" placeholder="Eosinophil"/><input type="text" id="lab-plt" placeholder="Platelet"/></div></div>
-      <div class="g3"><div class="iw"><label class="lbl">Fasting Blood Sugar (mg/dL)</label><input type="text" id="lab-fbs" inputmode="decimal"/></div><div class="iw"><label class="lbl">HbA1c (%)</label><input type="text" id="lab-hba1c" inputmode="decimal"/></div><div class="iw"><label class="lbl">Uric Acid</label><input type="text" id="lab-uric" inputmode="decimal"/></div></div>
-      <div class="iw"><label class="lbl">Lipid Profile</label><div class="g4"><input type="text" id="lab-chol" inputmode="decimal" placeholder="Chol"/><input type="text" id="lab-tg" inputmode="decimal" placeholder="TG"/><input type="text" id="lab-hdl" inputmode="decimal" placeholder="HDL"/><input type="text" id="lab-ldl" inputmode="decimal" placeholder="LDL"/></div></div>
-      <div class="iw"><label class="lbl">Renal Function (Kidney)</label><div class="g3"><input type="text" id="lab-bun" placeholder="BUN"/><input type="text" id="lab-cr" placeholder="Cr"/><input type="text" id="lab-egfr" placeholder="eGFR"/></div></div>
-      <div class="iw"><label class="lbl">Liver Function</label><div class="g3"><input type="text" id="lab-ast" inputmode="decimal" placeholder="AST"/><input type="text" id="lab-alt" inputmode="decimal" placeholder="ALT"/><input type="text" id="lab-alp" placeholder="ALP"/></div></div>
-      <div class="iw"><label class="lbl">Urine Examination</label><div class="g4"><input type="text" id="lab-upro" placeholder="Protein"/><input type="text" id="lab-uglu" placeholder="Glucose"/><input type="text" id="lab-uwbc" placeholder="WBC"/><input type="text" id="lab-urbc" placeholder="RBC"/></div></div>
       <div class="iw"><label class="lbl">Imaging & Special Tests</label><div class="pill-row" id="row-img-sel"></div><div id="img-inputs-container"></div></div>
     </div>
 
     <div class="sec">
       <div class="sec-lbl">Assessment & Plan</div>
-      <div class="iw"><button type="button" class="pill sel" id="btn-auto" onclick="toggleActive(this)">Auto-detect problems from lab values</button></div>
       <div class="iw"><label class="lbl">Common Problems Presets</label><div class="pill-row" id="row-as-presets"></div></div>
       <div class="subtype-container" id="subtype-container"><label class="lbl" id="subtype-lbl">Sub-classification:</label><div class="pill-row" id="row-subtypes"></div></div>
+      <div id="preset-fields"></div>
       <div class="iw"><label class="lbl">1. Overall Status</label><input type="text" id="as-overall" placeholder="e.g., Healthy adult"/></div>
       <div class="iw"><label class="lbl">2. New Findings</label><div style="display:flex;gap:10px"><button class="pill" id="btn-nf" onclick="toggleActive(this)">Select</button><input type="text" id="as-nf" placeholder="ระบุการค้นพบใหม่..." style="flex:1"/></div></div>
       <div class="iw"><label class="lbl">3. Status of Existing PMH</label><div style="display:flex;gap:10px"><button class="pill" id="btn-spmh" onclick="toggleActive(this)">Select</button><input type="text" id="as-spmh" placeholder="e.g., Well-controlled HTN" style="flex:1"/></div></div>
@@ -242,6 +239,9 @@ const SUBTYPE_OPTIONS = {
   'Fatty Liver (NAFLD / MASLD)': [
     {val:'mild', label:'Mild'},{val:'moderate', label:'Moderate'},{val:'severe', label:'Severe'}
   ],
+  'DM': [
+    {val:'suspected', label:'Suspected, needs confirmation'}
+  ],
   'Anemia': [
     {val:'normocytic', label:'Normochromic Normocytic'},{val:'microcytic', label:'Hypochromic Microcytic'},{val:'macrocytic', label:'Macrocytic'}
   ]
@@ -265,9 +265,50 @@ const ASSESS_PRESETS = [
   'Proteinuria', 'Asymptomatic Bacteriuria', 'Anemia', 'Eosinophilia', 'Leukopenia', 'Abnormal ECG'
 ];
 
+// ช่องกรอกค่าที่ขึ้นเมื่อเลือก preset (กรอกเฉพาะค่าที่ผิดปกติ)
+const PRESET_FIELDS = {
+  'Dyslipidemia': [{id:'ldl',label:'LDL',unit:'mg/dL'},{id:'chol',label:'Chol',unit:'mg/dL'}],
+  'Hypertriglyceridemia': [{id:'tg',label:'TG',unit:'mg/dL'}],
+  'Mixed Hyperlipidemia': [{id:'chol',label:'Chol',unit:'mg/dL'},{id:'tg',label:'TG',unit:'mg/dL'},{id:'hdl',label:'HDL',unit:'mg/dL'},{id:'ldl',label:'LDL',unit:'mg/dL'}],
+  'Low HDL': [{id:'hdl',label:'HDL',unit:'mg/dL'}],
+  'IFG': [{id:'fbs',label:'FBS',unit:'mg/dL'},{id:'hba1c',label:'HbA1c',unit:'%'}],
+  'DM': [{id:'fbs',label:'FBS',unit:'mg/dL'},{id:'hba1c',label:'HbA1c',unit:'%'}],
+  'Hyperuricemia / Gout': [{id:'uric',label:'Uric Acid',unit:'mg/dL'}],
+  'Fatty Liver (NAFLD / MASLD)': [{id:'ast',label:'AST',unit:'U/L'},{id:'alt',label:'ALT',unit:'U/L'}],
+  'Elevated Liver Enzymes': [{id:'ast',label:'AST',unit:'U/L'},{id:'alt',label:'ALT',unit:'U/L'},{id:'alp',label:'ALP',unit:'U/L'}],
+  'Microscopic Hematuria': [{id:'urbc',label:'Urine RBC',unit:'/HPF'}],
+  'Proteinuria': [{id:'upro',label:'Urine Protein',unit:''}],
+  'Asymptomatic Bacteriuria': [{id:'uwbc',label:'Urine WBC',unit:'/HPF'},{id:'ubact',label:'Bacteria',unit:''}],
+  'Anemia': [{id:'hb',label:'Hb',unit:'g/dL'},{id:'mcv',label:'MCV',unit:'fL'}],
+  'Eosinophilia': [{id:'eos',label:'Eosinophil',unit:''}],
+  'Leukopenia': [{id:'wbc',label:'WBC',unit:''}]
+};
+const pfId = (preset, fid) => 'pf-' + ASSESS_PRESETS.indexOf(preset) + '-' + fid;
+function initPresetFields() {
+  const cont = document.getElementById('preset-fields');
+  ASSESS_PRESETS.forEach(p => {
+    if (!PRESET_FIELDS[p]) return;
+    const g = document.createElement('div'); g.className = 'pf-group'; g.id = 'pfg-' + ASSESS_PRESETS.indexOf(p);
+    g.innerHTML = '<label class="lbl"></label><div class="pf-grid"></div>';
+    g.querySelector('.lbl').textContent = p + ' — ผลตรวจที่ผิดปกติ';
+    PRESET_FIELDS[p].forEach(f => {
+      const w = document.createElement('div');
+      const l = document.createElement('label'); l.className = 'lbl'; l.style.color = 'var(--text3)'; l.htmlFor = pfId(p, f.id); l.textContent = f.label + (f.unit ? ' (' + f.unit + ')' : '');
+      const i = document.createElement('input'); i.type = 'text'; i.id = pfId(p, f.id);
+      w.appendChild(l); w.appendChild(i); g.querySelector('.pf-grid').appendChild(w);
+    });
+    cont.appendChild(g);
+  });
+}
+function syncPresetField(p) {
+  const g = document.getElementById('pfg-' + ASSESS_PRESETS.indexOf(p)); if (!g) return;
+  const on = state.assessPresets.has(p);
+  g.style.display = on ? 'block' : 'none';
+  if (!on) g.querySelectorAll('input').forEach(i => i.value = '');
+}
+
 // เก็บ patientAdviceItems ไว้ใน scope นอกเพื่อให้ copy ได้
 let currentPatientAdviceItems = [];
-let dmSuspected = false; // DM จาก lab ค่าเดียว ยังไม่ยืนยัน
 
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -331,7 +372,7 @@ const updateAssessPresets = () => {
     btn.onclick = () => {
       if(state.assessPresets.has(p)) { state.assessPresets.delete(p); if (SUBTYPE_OPTIONS[p]) state.assessSubtypes[p] = 'none'; }
       else state.assessPresets.add(p);
-      updateAssessPresets(); renderSubtypes();
+      syncPresetField(p); updateAssessPresets(); renderSubtypes();
     }; c.appendChild(btn);
   });
 };
@@ -373,8 +414,8 @@ function buildPatientAdvice(asSet, drinksAlc) {
     let adviceObj = null;
 
     if (a === 'DM') {
-      assessTitle = dmSuspected ? 'ระดับน้ำตาลในเลือดสูง (สงสัยเบาหวาน ต้องตรวจยืนยัน)' : 'ระดับน้ำตาลในเลือดสูง / เบาหวาน';
-      adviceObj = dmSuspected
+      assessTitle = (state.assessSubtypes['DM'] === 'suspected') ? 'ระดับน้ำตาลในเลือดสูง (สงสัยเบาหวาน ต้องตรวจยืนยัน)' : 'ระดับน้ำตาลในเลือดสูง / เบาหวาน';
+      adviceObj = (state.assessSubtypes['DM'] === 'suspected')
         ? { title: assessTitle, text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงเข้าได้กับโรคเบาหวาน แต่ต้องตรวจซ้ำเพื่อยืนยันการวินิจฉัย', sub: '- ตรวจน้ำตาลในเลือด (FBS) และ HbA1c ซ้ำตามที่แพทย์นัด\n- ควบคุมอาหารประเภทแป้ง น้ำตาล และผลไม้รสหวาน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์' }
         : { title: assessTitle, text: 'คุณมีระดับน้ำตาลในเลือดสูงซึ่งเข้าได้กับโรคเบาหวาน ควรควบคุมอาหารและติดตามอาการอย่างใกล้ชิด', sub: '- ควบคุมอาหารประเภทแป้ง น้ำตาล และผลไม้รสหวาน\n- ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์\n- หากแพทย์สั่งยา ให้ทานยาอย่างเคร่งครัด\n- ตรวจติดตามระดับน้ำตาลตามนัด' };
     } else if (a === 'IFG') {
@@ -587,100 +628,37 @@ function generateOutput() {
   text += '\n';
 
   let asSet = new Set(state.assessPresets);
-  const fbsStr = getVal('lab-fbs');
-  const hba1cStr = getVal('lab-hba1c');
-  const ldlStr = getVal('lab-ldl'), cholStr = getVal('lab-chol'), tgStr = getVal('lab-tg'), hdlStr = getVal('lab-hdl');
-  const uricStr = getVal('lab-uric');
-  // อ่านเฉพาะตัวเลขตัวแรกของช่อง (รองรับ <, >, ≥, ≤ นำหน้า); ถ้าไม่ขึ้นต้นด้วยตัวเลขถือว่าไม่มีค่า
-  const numOf = (str) => { const m = (str || '').match(/^\s*[<>≥≤]?\s*(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : null; };
-  const female = state.sex === 'female';
-  dmSuspected = false;
-  if (getSel('btn-auto')) {
-    const fbs = numOf(fbsStr), a1c = numOf(hba1cStr);
-    const fbsDM = fbs !== null && fbs >= 126, a1cDM = a1c !== null && a1c >= 6.5;
-    const fbsPre = fbs !== null && fbs >= 100 && fbs < 126, a1cPre = a1c !== null && a1c >= 5.7 && a1c < 6.5;
-    if (fbsDM || a1cDM) {
-      asSet.add('DM'); asSet.delete('IFG');
-      // ยืนยัน DM อัตโนมัติเมื่อ FBS และ HbA1c ผิดปกติทั้งคู่ ถ้าค่าเดียวถือเป็น suspected
-      if (!state.assessPresets.has('DM') && !(fbsDM && a1cDM)) dmSuspected = true;
-    } else if (fbsPre || a1cPre) asSet.add('IFG');
-
-    // Lipid: ใช้ LDL เป็นหลัก ถ้าไม่มี LDL จึงใช้ Total Chol
-    const ldl = numOf(ldlStr), chol = numOf(cholStr), tg = numOf(tgStr), hdl = numOf(hdlStr);
-    if (ldl !== null ? ldl >= 130 : (chol !== null && chol >= 200)) asSet.add('Dyslipidemia');
-    if (tg !== null && tg >= 150) asSet.add('Hypertriglyceridemia');
-    if (hdl !== null && hdl < (female ? 50 : 40)) asSet.add('Low HDL');
-
-    const hb = numOf(getVal('lab-hb')); if (hb !== null && hb < (female ? 12 : 13)) asSet.add('Anemia');
-    let wbc = numOf(getVal('lab-wbc')); if (wbc !== null) { if (wbc < 100) wbc *= 1000; if (wbc < 4000) asSet.add('Leukopenia'); }
-    const uric = numOf(uricStr); if (uric !== null && uric > (female ? 6 : 7)) asSet.add('Hyperuricemia / Gout');
-    const ast = numOf(getVal('lab-ast')), alt = numOf(getVal('lab-alt'));
-    if ((ast !== null && ast > 40) || (alt !== null && alt > 40)) asSet.add('Elevated Liver Enzymes');
-    const urbc = numOf(getVal('lab-urbc')); if (urbc !== null && urbc >= 3) asSet.add('Microscopic Hematuria');
-    if (/^\s*(\+|[1-4]\s*\+|pos)/i.test(getVal('lab-upro'))) asSet.add('Proteinuria');
-  }
+  // Dyslipidemia + Hypertriglyceridemia => Mixed Hyperlipidemia
   if (asSet.has('Dyslipidemia') && asSet.has('Hypertriglyceridemia')) { asSet.delete('Dyslipidemia'); asSet.delete('Hypertriglyceridemia'); asSet.add('Mixed Hyperlipidemia'); }
 
-    let cbcArr = []; if(getVal('lab-hb')) cbcArr.push(`Hb: ${getVal('lab-hb')}`); if(getVal('lab-wbc')) cbcArr.push(`WBC: ${getVal('lab-wbc')}`); if(getVal('lab-eos')) cbcArr.push(`Eosinophil: ${getVal('lab-eos')}`); if(getVal('lab-plt')) cbcArr.push(`Platelet: ${getVal('lab-plt')}`);
-  const cbcLine = cbcArr.length > 0 ? `CBC: ${cbcArr.join(', ')}` : '';
-  const fbsLine = fbsStr ? `Fasting Blood Sugar: ${fbsStr} mg/dL` : '';
-  const hba1cLine = hba1cStr ? `HbA1c: ${hba1cStr} %` : '';
-  const uricLine = uricStr ? `Uric Acid: ${uricStr}` : '';
-  let lipidArr = []; if (cholStr) lipidArr.push(`Chol: ${cholStr}`); if (tgStr) lipidArr.push(`TG: ${tgStr}`); if (hdlStr) lipidArr.push(`HDL: ${hdlStr}`); if (ldlStr) lipidArr.push(`LDL: ${ldlStr}`);
-  const lipidLine = lipidArr.length > 0 ? `Lipid Profile: ${lipidArr.join(' / ')}` : '';
-  let renalArr = []; if(getVal('lab-bun')) renalArr.push(`BUN: ${getVal('lab-bun')}`); if(getVal('lab-cr')) renalArr.push(`Cr: ${getVal('lab-cr')}`); if(getVal('lab-egfr')) renalArr.push(`eGFR: ${getVal('lab-egfr')}`);
-  const renalLine = renalArr.length > 0 ? `Renal Function: ${renalArr.join(', ')}` : '';
-  let liverArr = []; if(getVal('lab-ast')) liverArr.push(`AST: ${getVal('lab-ast')}`); if(getVal('lab-alt')) liverArr.push(`ALT: ${getVal('lab-alt')}`); if(getVal('lab-alp')) liverArr.push(`ALP: ${getVal('lab-alp')}`);
-  const liverLine = liverArr.length > 0 ? `Liver Function: ${liverArr.join(', ')}` : '';
-  let uaArr = []; if(getVal('lab-upro')) uaArr.push(`Protein: ${getVal('lab-upro')}`); if(getVal('lab-uglu')) uaArr.push(`Glucose: ${getVal('lab-uglu')}`); if(getVal('lab-uwbc')) uaArr.push(`WBC: ${getVal('lab-uwbc')}`); if(getVal('lab-urbc')) uaArr.push(`RBC: ${getVal('lab-urbc')}`);
-  const uaLine = uaArr.length > 0 ? `Urine Examination: ${uaArr.join(', ')}` : '';
+  // ค่าที่กรอกในแต่ละ preset -> "LDL: 150 mg/dL / TG: 200 mg/dL" (รวมหลาย preset ได้ ตัดชื่อซ้ำ)
+  const fieldVals = (keys) => {
+    const out = [], seen = new Set();
+    keys.forEach(k => (PRESET_FIELDS[k] || []).forEach(f => {
+      const v = getVal(pfId(k, f.id));
+      if (v && !seen.has(f.label)) { seen.add(f.label); out.push(`${f.label}: ${v}${f.unit ? ' ' + f.unit : ''}`); }
+    }));
+    return out.join(' / ');
+  };
+
   let imgLines = {};
   IMG_LIST.forEach(k => { if(state.img[k]) { const val = getVal('img-in-' + k.replace(/\s+/g, '')); if (val) imgLines[k] = `${k}: ${val}`; } });
 
-  const hasAny = (...keys) => keys.some(k => asSet.has(k));
-  const cbcConsumed = hasAny('Anemia', 'Eosinophilia', 'Leukopenia');
-  const glucoseConsumed = hasAny('DM', 'IFG');
-  const uricConsumed = hasAny('Hyperuricemia / Gout');
-  const lipidConsumed = hasAny('Dyslipidemia', 'Hypertriglyceridemia', 'Mixed Hyperlipidemia', 'Low HDL');
-  const liverConsumed = hasAny('Elevated Liver Enzymes', 'Fatty Liver (NAFLD / MASLD)');
-  const uaConsumed = hasAny('Microscopic Hematuria', 'Asymptomatic Bacteriuria', 'Proteinuria');
-  const usAbdConsumed = asSet.has('Fatty Liver (NAFLD / MASLD)');
-  const ekgConsumed = asSet.has('Abnormal ECG');
-
+  // Imaging ที่ถูกนำไปแสดงใน Assessment แล้ว ไม่ต้องซ้ำใน Investigation Results
   let invLines = [];
-  if (cbcLine && !cbcConsumed) invLines.push(cbcLine);
-  if (fbsLine && !glucoseConsumed) invLines.push(fbsLine);
-  if (hba1cLine && !glucoseConsumed) invLines.push(hba1cLine);
-  if (uricLine && !uricConsumed) invLines.push(uricLine);
-  if (lipidLine && !lipidConsumed) invLines.push(lipidLine);
-  if (renalLine) invLines.push(renalLine);
-  if (liverLine && !liverConsumed) invLines.push(liverLine);
-  if (uaLine && !uaConsumed) invLines.push(uaLine);
   IMG_LIST.forEach(k => {
     if (!imgLines[k]) return;
-    if (k === 'US abdomen' && usAbdConsumed) return;
-    if (k === 'EKG' && ekgConsumed) return;
+    if (k === 'US abdomen' && asSet.has('Fatty Liver (NAFLD / MASLD)')) return;
+    if (k === 'EKG' && asSet.has('Abnormal ECG')) return;
     invLines.push(imgLines[k]);
   });
   if (invLines.length > 0) { text += `Investigation Results\n`; text += invLines.join('\n') + '\n\n'; }
 
-  const findingsMap = {
-    'DM': [fbsLine, hba1cLine].filter(Boolean).join(' / '),
-    'IFG': [fbsLine, hba1cLine].filter(Boolean).join(' / '),
-    'Dyslipidemia': lipidLine,
-    'Hypertriglyceridemia': lipidLine,
-    'Mixed Hyperlipidemia': lipidLine,
-    'Low HDL': lipidLine,
-    'Hyperuricemia / Gout': uricLine,
-    'Elevated Liver Enzymes': liverLine,
-    'Fatty Liver (NAFLD / MASLD)': [liverLine, imgLines['US abdomen']].filter(Boolean).join(' / '),
-    'Anemia': cbcLine,
-    'Eosinophilia': cbcLine,
-    'Leukopenia': cbcLine,
-    'Microscopic Hematuria': uaLine,
-    'Asymptomatic Bacteriuria': uaLine,
-    'Proteinuria': uaLine,
-    'Abnormal ECG': imgLines['EKG'] || ''
+  const findingFor = (a) => {
+    if (a === 'Mixed Hyperlipidemia') return fieldVals(['Mixed Hyperlipidemia', 'Dyslipidemia', 'Hypertriglyceridemia']);
+    if (a === 'Fatty Liver (NAFLD / MASLD)') return [fieldVals([a]), imgLines['US abdomen']].filter(Boolean).join(' / ');
+    if (a === 'Abnormal ECG') return imgLines['EKG'] || '';
+    return fieldVals([a]);
   };
 
   let assessPlanList = [];
@@ -692,7 +670,7 @@ function generateOutput() {
 
   asSet.forEach(a => {
     let pLines = []; let displayTitle = a;
-    if (a === 'DM') { if (dmSuspected) { displayTitle = 'DM (suspected: single abnormal result)'; pLines.push('- Repeat FBS and/or HbA1c to confirm diagnosis.'); } pLines.push('- แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ'); }
+    if (a === 'DM') { const dmSub = state.assessSubtypes['DM'] || 'none'; displayTitle = 'DM' + getSubtypeLabel('DM', dmSub); if (dmSub === 'suspected') pLines.push('- Repeat FBS and/or HbA1c to confirm diagnosis.'); pLines.push('- แนะนำควบคุมอาหารประเภทแป้ง ของหวาน และผลไม้รสหวาน ทานยาตามแพทย์สั่งอย่างเคร่งครัดและติดตามอาการอย่างสม่ำเสมอ'); }
     else if (a === 'IFG') { pLines.push('- Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
     else if (a === 'Dyslipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
     else if (a === 'Low HDL') { pLines.push('- Increase aerobic physical activity (≥150 min/week), smoking cessation if applicable, weight control.'); pLines.push('- Replace refined carbohydrates with unsaturated fats (olive oil, fish, nuts).'); }
@@ -708,7 +686,7 @@ function generateOutput() {
     else if (a === 'Microscopic Hematuria') { pLines.push('- Repeat UA in 48–72 hours after resolving benign transient causes.'); pLines.push('- Refer urologist if UA still shows microscopic hematuria.'); }
     else if (a === 'Asymptomatic Bacteriuria') { if (state.sex === 'female') { pLines.push('- Asymptomatic (no dysuria, frequency, urgency, suprapubic pain, flank pain, or fever).'); pLines.push('- No antibiotic treatment required if non-pregnant; if pregnant, treat per ANC guideline.'); } else { pLines.push('- Asymptomatic bacteriuria in a male is uncommon: repeat UA ± urine culture and evaluate for underlying urologic cause.'); } }
     else if (a === 'Proteinuria') { pLines.push('- Recheck UA next 1-2 weeks.'); }
-    assessPlanList.push({ title: displayTitle, plans: pLines, finding: findingsMap[a] || '' });
+    assessPlanList.push({ title: displayTitle, plans: pLines, finding: findingFor(a) });
   });
 
   if (assessPlanList.length > 0) { text += `Assessment and Plan\n`; assessPlanList.forEach((item, i) => { text += `${i + 1}. ${item.title}\n`; if (item.finding) { text += `   Finding: ${item.finding}\n`; } if (item.plans.length > 0) { text += `   Plan\n`; item.plans.forEach(p => { text += `   ${p}\n`; }); } }); text += '\n'; }
@@ -753,7 +731,7 @@ function copyOutput(btn, sourceId) {
 
 // Init
 updatePMH('none'); updateSex('male'); updateSmoke('never'); updateAlc('none'); updateEx('none'); updateLife();
-initImaging(); updateImgSel(); updateAssessPresets(); renderSubtypes();
+initImaging(); updateImgSel(); initPresetFields(); updateAssessPresets(); renderSubtypes();
 </script>
 </body>
 </html>
