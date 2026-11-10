@@ -573,7 +573,7 @@ function buildPatientAdvice(asSet, drinksAlc, extra) {
       adviceObj = { short: 'ไตรกลีเซอไรด์สูง', title: assessTitle, text: 'คุณมีระดับไตรกลีเซอไรด์ในเลือดสูง ซึ่งอาจเพิ่มความเสี่ยงต่อโรคหัวใจและตับอ่อนอักเสบ', keys: ['diet_sugar', 'diet_fish', 'exercise'].concat(drinksAlc ? ['alcohol'] : []) };
     } else if (a === 'Mixed Hyperlipidemia') {
       assessTitle = 'ไขมันในเลือดสูงชนิดผสม (LDL และไตรกลีเซอไรด์)';
-      adviceObj = { short: 'ไขมันในเลือดสูงชนิดผสม', title: assessTitle, text: 'คุณมีทั้งระดับไขมัน LDL และไตรกลีเซอไรด์ในเลือดสูงพร้อมกัน ซึ่งเพิ่มความเสี่ยงต่อโรคหัวใจและหลอดเลือดมากกว่าการมีไขมันสูงเพียงชนิดเดียว', keys: ['diet_veg', 'diet_sugar', 'diet_fat', 'diet_fish', 'exercise'].concat(drinksAlc ? ['alcohol'] : [], ['follow_lipid']) };
+      adviceObj = { short: 'ไขมันในเลือดสูงชนิดผสม', title: assessTitle, text: 'คุณมีทั้งระดับไขมัน LDL และไตรกลีเซอไรด์ในเลือดสูงพร้อมกัน ซึ่งเพิ่มความเสี่ยงต่อโรคหัวใจและหลอดเลือดมากกว่าการมีไขมันสูงเพียงชนิดเดียว', keys: ['diet_veg', 'diet_sugar', 'diet_fat', 'diet_fish', 'exercise'].concat(drinksAlc ? ['alcohol'] : [], ['follow_dlp']) };
     } else if (a === 'Hypertension') {
       assessTitle = 'ความดันโลหิตสูง';
       adviceObj = { short: 'ความดันโลหิตสูง', title: assessTitle, text: 'ความดันโลหิตสูงกว่าเกณฑ์ ซึ่งเพิ่มความเสี่ยงต่อโรคหัวใจ หลอดเลือดสมอง และโรคไต', keys: ['diet_salt', 'diet_veg', 'weight_ctrl', 'exercise'].concat(drinksAlc ? ['alcohol'] : [], ['smoke_stop', 'follow_bp']), warn: 'หากมีอาการปวดศีรษะรุนแรง เจ็บหน้าอก ใจสั่น แขนขาอ่อนแรง หรือพูดไม่ชัด ให้รีบพบแพทย์ทันที' };
