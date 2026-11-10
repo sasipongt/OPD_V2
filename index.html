@@ -421,7 +421,7 @@ function planFor(a) {
   let pLines = []; let displayTitle = a;
     if (a === 'DM') { const dmSub = state.assessSubtypes['DM'] || 'none'; displayTitle = 'DM' + getSubtypeLabel('DM', dmSub); if (dmSub === 'suspected') pLines.push('- Repeat FBS and/or HbA1c to confirm diagnosis.'); pLines.push('- Dietary modification: limit starchy foods, sweets and sweet fruits; adhere to prescribed medications (if any) and follow up regularly.'); }
     else if (a === 'IFG') { pLines.push('- Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
-    else if (a === 'Dyslipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
+    else if (a === 'Dyslipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Consider Lp(a) once (if not previously measured).'); pLines.push('- Consider statin per risk; recheck fasting lipid profile in 3–6 months after lifestyle modification.'); }
     else if (a === 'Low HDL') { pLines.push('- Increase aerobic physical activity (≥150 min/week), smoking cessation if applicable, weight control.'); pLines.push('- Replace refined carbohydrates with unsaturated fats (olive oil, fish, nuts).'); }
     else if (a === 'Hypertriglyceridemia') { pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.'); pLines.push('- Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); }
     else if (a === 'Mixed Hyperlipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC): reduce saturated and trans fats, increase vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose); increase omega-3 fatty acids (fatty fish); emphasize Mediterranean diet.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); pLines.push('- Consider pharmacotherapy (e.g., statin ± fibrate) if lifestyle modification is insufficient; recheck lipid profile in 3-6 months.'); }
@@ -507,6 +507,7 @@ const ADV = {
   follow_dm_repeat: ['follow', 'ตรวจน้ำตาลในเลือด (FBS) และ HbA1c ซ้ำตามที่แพทย์นัด เพื่อยืนยันการวินิจฉัย'],
   follow_dm: ['follow', 'ตรวจติดตามระดับน้ำตาลในเลือดตามนัด'],
   follow_meds: ['follow', 'หากแพทย์สั่งยา ให้ทานยาอย่างต่อเนื่องและไม่หยุดยาเอง'],
+  follow_dlp: ['follow', 'ตรวจติดตามระดับไขมันในเลือดทุก 3-6 เดือน เป้าหมาย LDL-cholesterol < 100 mg/dL หรือปรึกษาแพทย์เพื่อพิจารณาการรักษาด้วยยา'],
   follow_lipid: ['follow', 'ตรวจติดตามระดับไขมันในเลือดทุก 3-6 เดือน หรือปรึกษาแพทย์เพื่อพิจารณาการรักษาด้วยยา'],
   follow_bp: ['follow', 'วัดความดันโลหิตที่บ้านสม่ำเสมอ จดบันทึก และนำมาให้แพทย์ดู'],
   follow_weight: ['follow', 'ปรึกษาแพทย์เพื่อพิจารณาแนวทางลดน้ำหนักที่เหมาะสม'],
@@ -563,7 +564,7 @@ function buildPatientAdvice(asSet, drinksAlc, extra) {
       adviceObj = { short: 'น้ำตาลในเลือดสูงเสี่ยงโรคเบาหวาน', title: assessTitle, text: 'ผลตรวจพบระดับน้ำตาลในเลือดสูงกว่าปกติเล็กน้อย แต่ยังไม่ถึงเกณฑ์วินิจฉัยโรคเบาหวาน การปรับเปลี่ยนพฤติกรรมสามารถช่วยป้องกันการเกิดโรคเบาหวานได้', keys: ['diet_sugar', 'diet_veg', 'exercise', 'follow_dm'] };
     } else if (a === 'Dyslipidemia') {
       assessTitle = 'ไขมันในเลือดสูง (คอเลสเตอรอล / LDL)';
-      adviceObj = { short: 'ไขมันในเลือดสูง', title: assessTitle, text: 'ระดับไขมันคอเลสเตอรอลหรือ LDL (ไขมันไม่ดี) ในเลือดสูง ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด', keys: ['diet_veg', 'diet_fat', 'exercise', 'follow_lipid'] };
+      adviceObj = { short: 'ไขมันในเลือดสูง', title: assessTitle, text: 'ระดับไขมันคอเลสเตอรอลหรือ LDL (ไขมันไม่ดี) ในเลือดสูง ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด', keys: ['diet_veg', 'diet_fat', 'exercise', 'follow_dlp'] };
     } else if (a === 'Low HDL') {
       assessTitle = 'ไขมันดี (HDL) ต่ำ';
       adviceObj = { short: 'HDL ต่ำ', title: assessTitle, text: 'ระดับไขมันดี (HDL) ในเลือดต่ำกว่าเกณฑ์ ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด', keys: ['exercise', 'diet_sugar', 'diet_fat', 'smoke_stop'] };
