@@ -423,7 +423,7 @@ function planFor(a) {
     else if (a === 'IFG') { pLines.push('- Recommend to reduce intake of sugar-sweetened beverages, refined carbohydrates, and saturated fats; emphasize non-starchy vegetables, lean proteins, and whole grains.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); }
     else if (a === 'Dyslipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC) emphasizing a heart-healthy diet: reduce intake of saturated and trans fats; increase consumption of vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); pLines.push('- Consider Lp(a) once (if not previously measured).'); pLines.push('- Consider statin per risk; recheck fasting lipid profile in 3–6 months after lifestyle modification.'); }
     else if (a === 'Low HDL') { pLines.push('- Increase aerobic physical activity (≥150 min/week), smoking cessation if applicable, weight control.'); pLines.push('- Replace refined carbohydrates with unsaturated fats (olive oil, fish, nuts).'); }
-    else if (a === 'Hypertriglyceridemia') { pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.'); pLines.push('- Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); }
+    else if (a === 'Hypertriglyceridemia') { pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose), increase omega-3 fatty acids (fatty fish), emphasize Mediterranean diet, replace saturated fats with mono-/polyunsaturated fats.'); pLines.push('- Physical Activity: ≥ 150 min/week moderate-intensity aerobic exercise.'); pLines.push('- Weight reduction 5–10% if overweight/obese.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); pLines.push('- Recheck fasting lipid profile in 3-6 month'); }
     else if (a === 'Mixed Hyperlipidemia') { pLines.push('- Initiate therapeutic lifestyle changes (TLC): reduce saturated and trans fats, increase vegetables, fruits, whole grains, and soluble fiber.'); pLines.push('- Diet: Reduce simple carbohydrates (sugars, refined grains, fructose); increase omega-3 fatty acids (fatty fish); emphasize Mediterranean diet.'); pLines.push('- Recommend at least 150 minutes per week of moderate-intensity aerobic physical activity.'); if (drinksAlc) pLines.push('- Alcohol: Strictly limit or eliminate.'); pLines.push('- Consider pharmacotherapy (e.g., statin ± fibrate) if lifestyle modification is insufficient; recheck lipid profile in 3-6 months.'); }
     else if (a === 'Hyperuricemia / Gout') { pLines.push(`- Dietary Modification: Limit intake of purine-rich foods (organ meats, red meat, certain seafood), high-fructose corn syrup, sugar-sweetened beverages${drinksAlc ? ', and alcohol (especially beer and spirits)' : ''}. Encourage low-fat dairy products and vegetable consumption.`); pLines.push('- Hydration: Increase fluid intake to > 2 liters per day to enhance renal urate excretion and reduce risk of nephrolithiasis.'); }
     else if (a === 'Hypertension') { pLines.push('- Confirm diagnosis with repeated office BP and/or home / ambulatory BP monitoring.'); pLines.push('- Lifestyle modification: DASH diet, sodium <2 g/day, weight reduction, regular aerobic exercise, limit alcohol, smoking cessation.'); pLines.push('- Assess other cardiovascular risk factors and target organ damage (UA, creatinine/eGFR, ECG).'); pLines.push('- Consider antihypertensive pharmacotherapy according to BP level and cardiovascular risk; follow-up BP in 1–3 months.'); }
@@ -507,6 +507,8 @@ const ADV = {
   follow_dm_repeat: ['follow', 'ตรวจน้ำตาลในเลือด (FBS) และ HbA1c ซ้ำตามที่แพทย์นัด เพื่อยืนยันการวินิจฉัย'],
   follow_dm: ['follow', 'ตรวจติดตามระดับน้ำตาลในเลือดตามนัด'],
   follow_meds: ['follow', 'หากแพทย์สั่งยา ให้ทานยาอย่างต่อเนื่องและไม่หยุดยาเอง'],
+  weight_over: ['weight', 'หากน้ำหนักเกิน แนะนำลดน้ำหนัก เป้าหมาย 5-10%'],
+  follow_tg: ['follow', 'ตรวจไขมันในเลือดซ้ำ ใน 3-6 เดือน'],
   follow_dlp: ['follow', 'ตรวจติดตามระดับไขมันในเลือดทุก 3-6 เดือน เป้าหมาย LDL-cholesterol < 100 mg/dL หรือปรึกษาแพทย์เพื่อพิจารณาการรักษาด้วยยา'],
   follow_lipid: ['follow', 'ตรวจติดตามระดับไขมันในเลือดทุก 3-6 เดือน หรือปรึกษาแพทย์เพื่อพิจารณาการรักษาด้วยยา'],
   follow_bp: ['follow', 'วัดความดันโลหิตที่บ้านสม่ำเสมอ จดบันทึก และนำมาให้แพทย์ดู'],
@@ -532,7 +534,7 @@ function mergeAdvice(group, items) {
   let sub, warn = [...new Set(items.map(o => o.warn).filter(Boolean))].join('\n');
   if (group === 'metabolic') {
     let keys = [...new Set(items.flatMap(o => o.keys))];
-    if (keys.includes('weight')) keys = keys.filter(k => k !== 'weight_ctrl');
+    if (keys.includes('weight')) keys = keys.filter(k => k !== 'weight_ctrl' && k !== 'weight_over');
     keys.sort((x, y) => ADVICE_CAT_ORDER.indexOf(ADV[x][0]) - ADVICE_CAT_ORDER.indexOf(ADV[y][0]));
     sub = keys.map(k => '- ' + ADV[k][1]).join('\n');
   } else {
@@ -570,7 +572,7 @@ function buildPatientAdvice(asSet, drinksAlc, extra) {
       adviceObj = { short: 'HDL ต่ำ', title: assessTitle, text: 'ระดับไขมันดี (HDL) ในเลือดต่ำกว่าเกณฑ์ ซึ่งเป็นปัจจัยเสี่ยงต่อโรคหัวใจและหลอดเลือด', keys: ['exercise', 'diet_sugar', 'diet_fat', 'smoke_stop'] };
     } else if (a === 'Hypertriglyceridemia') {
       assessTitle = 'ระดับไขมันไตรกลีเซอไรด์สูง';
-      adviceObj = { short: 'ไตรกลีเซอไรด์สูง', title: assessTitle, text: 'คุณมีระดับไตรกลีเซอไรด์ในเลือดสูง ซึ่งอาจเพิ่มความเสี่ยงต่อโรคหัวใจและตับอ่อนอักเสบ', keys: ['diet_sugar', 'diet_fish', 'exercise'].concat(drinksAlc ? ['alcohol'] : []) };
+      adviceObj = { short: 'ไตรกลีเซอไรด์สูง', title: assessTitle, text: 'คุณมีระดับไตรกลีเซอไรด์ในเลือดสูง ซึ่งอาจเพิ่มความเสี่ยงต่อโรคหัวใจและตับอ่อนอักเสบ', keys: ['diet_sugar', 'diet_fish', 'exercise'].concat(drinksAlc ? ['alcohol'] : [], ['weight_over', 'follow_tg']) };
     } else if (a === 'Mixed Hyperlipidemia') {
       assessTitle = 'ไขมันในเลือดสูงชนิดผสม (LDL และไตรกลีเซอไรด์)';
       adviceObj = { short: 'ไขมันในเลือดสูงชนิดผสม', title: assessTitle, text: 'คุณมีทั้งระดับไขมัน LDL และไตรกลีเซอไรด์ในเลือดสูงพร้อมกัน ซึ่งเพิ่มความเสี่ยงต่อโรคหัวใจและหลอดเลือดมากกว่าการมีไขมันสูงเพียงชนิดเดียว', keys: ['diet_veg', 'diet_sugar', 'diet_fat', 'diet_fish', 'exercise'].concat(drinksAlc ? ['alcohol'] : [], ['follow_dlp']) };
